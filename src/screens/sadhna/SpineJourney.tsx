@@ -13,6 +13,7 @@ export const SpineJourney = ({
   onSelectSection?: (section: SpineSection) => void;
 }) => {
   const sections = spineJourney.getSections();
+  const unlockedCount = spineJourney.getUnlockedCount();
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -20,50 +21,91 @@ export const SpineJourney = ({
         <TouchableOpacity onPress={onBack}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.tag}>33-VERTEBRA AXIS</Text>
+        <Text style={styles.tag}>HEADSPACE PROGRESSION TREE</Text>
       </View>
 
-      <Text style={styles.title}>The Living Spine Map</Text>
+      <Text style={styles.title}>The 33-Vertebra Ascension</Text>
       <Text style={styles.subtitle}>
-        Ascend through 33 progressive stations of attention depth. Each vertebra requires sensory breath proof to unlock.
+        Linear contemplative course: Complete breath proof to advance node by node from Root to Crown.
       </Text>
 
-      {/* Vertical Spine Column */}
-      <View style={styles.spineColumn}>
-        <View style={styles.centralAxisLine} />
+      {/* Chapter Overview Cards */}
+      <View style={styles.chapterBadgeRow}>
+        <View style={[styles.chapterPill, styles.chapterPillActive]}>
+          <Text style={styles.chapterPillText}>CH. I: ROOT (V1–V11)</Text>
+        </View>
+        <View style={styles.chapterPill}>
+          <Text style={styles.chapterPillText}>CH. II: CHANNEL</Text>
+        </View>
+        <View style={styles.chapterPill}>
+          <Text style={styles.chapterPillText}>CH. III: CROWN</Text>
+        </View>
+      </View>
 
-        {sections.map((sec) => (
-          <TouchableOpacity
-            key={sec.id}
-            style={[
-              styles.vertebraRow,
-              sec.isUnlocked ? styles.rowUnlocked : styles.rowLocked,
-            ]}
-            onPress={() => onSelectSection?.(sec)}
-            activeOpacity={sec.isUnlocked ? 0.7 : 1}
-          >
-            <View
-              style={[
-                styles.nodeCircle,
-                sec.isUnlocked ? styles.nodeUnlocked : styles.nodeLocked,
-              ]}
-            >
-              <Text style={styles.nodeNumber}>{sec.id}</Text>
-            </View>
+      {/* Winding Milestone Path Map */}
+      <View style={styles.windingMap}>
+        {sections.map((sec, idx) => {
+          const isPassed = sec.id < unlockedCount;
+          const isCurrent = sec.id === unlockedCount;
+          const isGatekeeper = sec.id === 11 || sec.id === 22 || sec.id === 33;
 
-            <View style={styles.nodeDetails}>
-              <View style={styles.titleRow}>
-                <Text style={[styles.nodeName, !sec.isUnlocked && styles.lockedText]}>
+          // Offset pattern (Headspace/Duolingo winding path)
+          const offsetStyle =
+            idx % 3 === 0
+              ? styles.alignCenter
+              : idx % 3 === 1
+              ? styles.alignLeft
+              : styles.alignRight;
+
+          return (
+            <View key={sec.id} style={[styles.nodeRow, offsetStyle]}>
+              {idx > 0 && (
+                <View
+                  style={[
+                    styles.pathConnector,
+                    isPassed || isCurrent ? styles.connectorActive : styles.connectorLocked,
+                  ]}
+                />
+              )}
+
+              <TouchableOpacity
+                style={[
+                  styles.nodeButton,
+                  isPassed && styles.nodePassed,
+                  isCurrent && styles.nodeCurrent,
+                  !sec.isUnlocked && styles.nodeLocked,
+                  isGatekeeper && styles.nodeGatekeeper,
+                ]}
+                onPress={() => onSelectSection?.(sec)}
+                activeOpacity={sec.isUnlocked ? 0.7 : 1}
+              >
+                <Text style={styles.nodeIcon}>
+                  {isPassed ? '✓' : isCurrent ? '⚡' : isGatekeeper ? '👑' : '🔒'}
+                </Text>
+                <Text style={styles.nodeNum}>{sec.id}</Text>
+              </TouchableOpacity>
+
+              <View style={styles.nodeTextBubble}>
+                <Text
+                  style={[
+                    styles.nodeName,
+                    isCurrent && { color: COLORS.PRIMARY, fontWeight: '700' },
+                    !sec.isUnlocked && { color: COLORS.TEXT_MUTED },
+                  ]}
+                >
                   {sec.name}
                 </Text>
-                <Text style={styles.chapterBadge}>{sec.chapter.toUpperCase()}</Text>
+                <Text style={styles.nodeSub}>
+                  {isPassed
+                    ? `Mastered · ${sec.accuracyScore || 94}% match`
+                    : isCurrent
+                    ? 'Active Station · Tap to Initiate'
+                    : `Locked · Requires V${sec.id - 1}`}
+                </Text>
               </View>
-              <Text style={styles.nodeSub} numberOfLines={1}>
-                {sec.isUnlocked ? sec.description : '🔒 Locked — Complete previous vertebra'}
-              </Text>
             </View>
-          </TouchableOpacity>
-        ))}
+          );
+        })}
       </View>
     </ScrollView>
   );
@@ -76,7 +118,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
-    paddingBottom: 50,
+    paddingBottom: 60,
   },
   topBar: {
     flexDirection: 'row',
@@ -93,6 +135,7 @@ const styles = StyleSheet.create({
     ...TYPOGRAPHY.caption,
     color: COLORS.SADHNA_VIOLET,
     letterSpacing: 1.5,
+    fontWeight: '700',
   },
   title: {
     ...TYPOGRAPHY.h1,
@@ -103,75 +146,113 @@ const styles = StyleSheet.create({
     color: COLORS.TEXT_MUTED,
     marginVertical: 8,
   },
-  spineColumn: {
-    marginTop: 20,
-    position: 'relative',
-  },
-  centralAxisLine: {
-    position: 'absolute',
-    left: 20,
-    top: 10,
-    bottom: 10,
-    width: 2,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  vertebraRow: {
+  chapterBadgeRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 14,
+    justifyContent: 'space-between',
+    marginVertical: 14,
+  },
+  chapterPill: {
     backgroundColor: COLORS.CARD,
-    borderRadius: 12,
-    padding: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: COLORS.BORDER_SUBTLE,
   },
-  rowUnlocked: {
-    borderColor: 'rgba(108, 99, 255, 0.4)',
+  chapterPillActive: {
+    borderColor: COLORS.SADHNA_VIOLET,
+    backgroundColor: 'rgba(108, 99, 255, 0.1)',
   },
-  rowLocked: {
-    opacity: 0.5,
-  },
-  nodeCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
-  },
-  nodeUnlocked: {
-    backgroundColor: COLORS.SADHNA_VIOLET,
-  },
-  nodeLocked: {
-    backgroundColor: '#282828',
-  },
-  nodeNumber: {
-    ...TYPOGRAPHY.bodyBold,
+  chapterPillText: {
+    ...TYPOGRAPHY.caption,
+    fontSize: 9,
+    fontWeight: '700',
     color: COLORS.TEXT_PRIMARY,
   },
-  nodeDetails: {
-    flex: 1,
+  windingMap: {
+    marginTop: 20,
+    alignItems: 'center',
   },
-  titleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  nodeRow: {
+    width: '100%',
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  alignCenter: {
+    alignItems: 'center',
+  },
+  alignLeft: {
+    alignItems: 'flex-start',
+    paddingLeft: 30,
+  },
+  alignRight: {
+    alignItems: 'flex-end',
+    paddingRight: 30,
+  },
+  pathConnector: {
+    width: 3,
+    height: 24,
+    marginBottom: 6,
+  },
+  connectorActive: {
+    backgroundColor: COLORS.SUCCESS,
+  },
+  connectorLocked: {
+    backgroundColor: '#333',
+  },
+  nodeButton: {
+    width: 62,
+    height: 62,
+    borderRadius: 31,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: COLORS.BORDER_SUBTLE,
+  },
+  nodePassed: {
+    backgroundColor: COLORS.SUCCESS,
+    borderColor: '#FFF',
+  },
+  nodeCurrent: {
+    backgroundColor: COLORS.PRIMARY,
+    borderColor: '#FFF',
+    borderWidth: 3,
+  },
+  nodeLocked: {
+    backgroundColor: '#1E1E1E',
+  },
+  nodeGatekeeper: {
+    borderColor: COLORS.PRIMARY,
+    backgroundColor: COLORS.SADHNA_VIOLET,
+  },
+  nodeIcon: {
+    fontSize: 18,
+    color: COLORS.TEXT_PRIMARY,
+  },
+  nodeNum: {
+    ...TYPOGRAPHY.caption,
+    fontSize: 9,
+    color: COLORS.TEXT_PRIMARY,
+    fontWeight: '700',
+  },
+  nodeTextBubble: {
+    backgroundColor: COLORS.CARD,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginTop: 6,
+    borderWidth: 1,
+    borderColor: COLORS.BORDER_SUBTLE,
     alignItems: 'center',
   },
   nodeName: {
     ...TYPOGRAPHY.bodyBold,
+    fontSize: 13,
     color: COLORS.TEXT_PRIMARY,
-  },
-  lockedText: {
-    color: COLORS.TEXT_MUTED,
-  },
-  chapterBadge: {
-    ...TYPOGRAPHY.caption,
-    fontSize: 10,
-    color: COLORS.PRIMARY,
-    fontWeight: '700',
   },
   nodeSub: {
     ...TYPOGRAPHY.caption,
+    fontSize: 10,
     color: COLORS.TEXT_MUTED,
     marginTop: 2,
   },
