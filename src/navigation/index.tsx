@@ -15,17 +15,36 @@ import { SpineSection } from '../screens/sadhna/SpineSection';
 import { ManovigyanHome } from '../screens/manovigyan/ManovigyanHome';
 import { InquirySession } from '../screens/manovigyan/InquirySession';
 import { SelfMirrorReport } from '../screens/manovigyan/SelfMirrorReport';
+import { SovereignCockpit } from '../screens/dashboard/SovereignCockpit';
 import { SpineSection as SpineSectionType, InquiryCategory } from '../types';
 
-export type MainTab = 'ROUTINE' | 'SADHNA' | 'MANOVIGYAN';
+export type MainTab = 'COCKPIT' | 'ROUTINE' | 'SADHNA' | 'MANOVIGYAN';
 
 export const RootNavigator = () => {
-  const [activeTab, setActiveTab] = useState<MainTab>('ROUTINE');
+  const [activeTab, setActiveTab] = useState<MainTab>('COCKPIT');
   const [currentSubScreen, setCurrentSubScreen] = useState<string | null>(null);
   const [selectedSection, setSelectedSection] = useState<SpineSectionType | null>(null);
   const [breathingSectionId, setBreathingSectionId] = useState<number>(1);
   const [inquiryCategory, setInquiryCategory] = useState<InquiryCategory | undefined>(undefined);
   const [inquiryDilemmaId, setInquiryDilemmaId] = useState<string | undefined>(undefined);
+
+  const handleCockpitNavigate = (tab: string, screen?: string, params?: any) => {
+    setActiveTab(tab as MainTab);
+    if (screen) {
+      if (params?.sectionId) {
+        setBreathingSectionId(params.sectionId);
+      }
+      if (params?.category) {
+        setInquiryCategory(params.category);
+      }
+      if (params?.dilemmaId) {
+        setInquiryDilemmaId(params.dilemmaId);
+      }
+      setCurrentSubScreen(screen);
+    } else {
+      setCurrentSubScreen(null);
+    }
+  };
 
   const handleNavigateRoutine = (screen: string) => {
     setCurrentSubScreen(screen);
@@ -114,6 +133,10 @@ export const RootNavigator = () => {
       return <SelfMirrorReport onBack={handleBack} />;
     }
 
+    if (activeTab === 'COCKPIT') {
+      return <SovereignCockpit onNavigate={handleCockpitNavigate} />;
+    }
+
     if (activeTab === 'ROUTINE') {
       return <RoutineHome onNavigate={handleNavigateRoutine} />;
     }
@@ -130,9 +153,25 @@ export const RootNavigator = () => {
       <StatusBar barStyle="light-content" />
       <View style={styles.container}>{renderContent()}</View>
 
-      {/* Main Triple Tab Switcher */}
+      {/* Main 4-Tab Switcher */}
       {!currentSubScreen && (
         <View style={styles.tabBar}>
+          <TouchableOpacity
+            style={[styles.tabButton, activeTab === 'COCKPIT' && styles.tabButtonActiveCockpit]}
+            onPress={() => setActiveTab('COCKPIT')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.tabIcon}>🔆</Text>
+            <Text
+              style={[
+                styles.tabLabel,
+                activeTab === 'COCKPIT' && { color: COLORS.PRIMARY, fontWeight: '700' },
+              ]}
+            >
+              COCKPIT
+            </Text>
+          </TouchableOpacity>
+
           <TouchableOpacity
             style={[styles.tabButton, activeTab === 'ROUTINE' && styles.tabButtonActiveRoutine]}
             onPress={() => setActiveTab('ROUTINE')}
@@ -183,7 +222,7 @@ export const RootNavigator = () => {
                 },
               ]}
             >
-              MANOVIGYAN
+              MANOVI.
             </Text>
           </TouchableOpacity>
         </View>
@@ -214,7 +253,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 12,
-    marginHorizontal: 6,
+    marginHorizontal: 4,
+  },
+  tabButtonActiveCockpit: {
+    backgroundColor: 'rgba(201, 146, 42, 0.1)',
   },
   tabButtonActiveRoutine: {
     backgroundColor: 'rgba(232, 69, 69, 0.08)',
@@ -226,13 +268,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 210, 211, 0.08)',
   },
   tabIcon: {
-    fontSize: 20,
+    fontSize: 18,
     marginBottom: 2,
   },
   tabLabel: {
     ...TYPOGRAPHY.caption,
     color: COLORS.TEXT_MUTED,
     letterSpacing: 0.5,
-    fontSize: 10,
+    fontSize: 9,
   },
 });
