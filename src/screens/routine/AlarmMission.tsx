@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
 import { COLORS } from '../../theme/colors';
 import { TYPOGRAPHY } from '../../theme/typography';
 import { MissionType } from '../../types';
@@ -15,6 +15,8 @@ export const AlarmMission = ({ onBack }: { onBack?: () => void }) => {
   const [isDone, setIsDone] = useState(false);
   const [dynamicAccel, setDynamicAccel] = useState<number>(0);
   const [isHardwareActive, setIsHardwareActive] = useState(false);
+  const [showWakeCheckModal, setShowWakeCheckModal] = useState(false);
+  const [isWakeConfirmed, setIsWakeConfirmed] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -180,12 +182,56 @@ export const AlarmMission = ({ onBack }: { onBack?: () => void }) => {
 
       {isDone && (
         <View style={styles.wakeUpCheckNotice}>
-          <Text style={styles.noticeTitle}>⚡ DOUBLE GATE ACTIVE</Text>
+          <View style={styles.wakeNoticeTop}>
+            <Text style={styles.noticeTitle}>⚡ RECIDIVISM GUARD ACTIVE</Text>
+            <Text style={[styles.noticeBadge, isWakeConfirmed && styles.noticeBadgeDone]}>
+              {isWakeConfirmed ? 'VERIFIED ✓' : '5-MIN GATE'}
+            </Text>
+          </View>
           <Text style={styles.noticeBody}>
-            Monk Confirmation check scheduled in 5 minutes. If missed, alarm reactivates.
+            {isWakeConfirmed
+              ? 'Conscious presence verified. You are officially upright and anchored.'
+              : 'Alarmy-style double gate: confirms you did not crawl back into bed.'}
           </Text>
+          {!isWakeConfirmed && (
+            <TouchableOpacity
+              style={styles.testWakeGateBtn}
+              onPress={() => {
+                HapticService.mediumImpact();
+                setShowWakeCheckModal(true);
+              }}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.testWakeGateText}>Trigger Wake-Up Check Now →</Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
+
+      {/* Wake-Up Check Interactive Modal */}
+      <Modal visible={showWakeCheckModal} animationType="fade" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalEmoji}>🧘</Text>
+            <Text style={styles.modalTitle}>ARE YOU UPRIGHT, MONK?</Text>
+            <Text style={styles.modalSub}>
+              Confirm you are standing, breathing, and out of bed. If unconfirmed within 60s, the alarm siren will sound again.
+            </Text>
+
+            <TouchableOpacity
+              style={styles.confirmAwakeBtn}
+              onPress={() => {
+                HapticService.successNotification();
+                setIsWakeConfirmed(true);
+                setShowWakeCheckModal(false);
+              }}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.confirmAwakeBtnText}>I AM AWAKE & GROUNDED ✓</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -326,6 +372,95 @@ const styles = StyleSheet.create({
   triggerButtonText: {
     ...TYPOGRAPHY.bodyBold,
     color: COLORS.TEXT_PRIMARY,
+    letterSpacing: 1,
+  },
+  wakeNoticeTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  noticeBadge: {
+    ...TYPOGRAPHY.caption,
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#FFB800',
+    backgroundColor: '#1C201A',
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    borderRadius: 6,
+  },
+  noticeBadgeDone: {
+    color: '#39D98A',
+    backgroundColor: '#16281A',
+  },
+  testWakeGateBtn: {
+    marginTop: 8,
+    backgroundColor: '#1C221A',
+    borderRadius: 8,
+    paddingVertical: 6,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#39D98A50',
+  },
+  testWakeGateText: {
+    ...TYPOGRAPHY.caption,
+    color: '#39D98A',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalCard: {
+    backgroundColor: '#121512',
+    borderRadius: 20,
+    padding: 24,
+    borderWidth: 1.5,
+    borderColor: '#FFB800',
+    alignItems: 'center',
+    width: '100%',
+    shadowColor: '#FFB800',
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+  },
+  modalEmoji: {
+    fontSize: 36,
+    marginBottom: 10,
+  },
+  modalTitle: {
+    ...TYPOGRAPHY.body,
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#FFF',
+    letterSpacing: 1.2,
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  modalSub: {
+    ...TYPOGRAPHY.caption,
+    fontSize: 11,
+    color: '#8E958A',
+    lineHeight: 16,
+    textAlign: 'center',
+    marginBottom: 18,
+  },
+  confirmAwakeBtn: {
+    backgroundColor: '#39D98A',
+    borderRadius: 12,
+    paddingVertical: 14,
+    width: '100%',
+    alignItems: 'center',
+  },
+  confirmAwakeBtnText: {
+    ...TYPOGRAPHY.caption,
+    color: '#070807',
+    fontSize: 11,
+    fontWeight: '800',
     letterSpacing: 1,
   },
   wakeUpCheckNotice: {

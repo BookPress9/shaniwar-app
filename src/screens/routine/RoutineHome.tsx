@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -31,7 +32,10 @@ export const RoutineHome = ({ onNavigate }: Props) => {
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   const [isWrapperModalOpen, setIsWrapperModalOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [completedAnchors, setCompletedAnchors] = useState<string[]>([]);
   const activeMonks = 1428;
+
+  const getTodayKey = () => '@hybrid_monk_completed_' + new Date().toISOString().split('T')[0];
 
   useEffect(() => {
     loadData();
@@ -58,6 +62,30 @@ export const RoutineHome = ({ onNavigate }: Props) => {
     setItems(routine);
     setCurrentArchetype(arch);
     setActiveItem(routineService.getCurrentActiveItem());
+
+    try {
+      const stored = await AsyncStorage.getItem(getTodayKey());
+      if (stored) {
+        setCompletedAnchors(JSON.parse(stored));
+      }
+    } catch {
+      // Ignore
+    }
+  };
+
+  const handleToggleComplete = async (id: string) => {
+    HapticService.successNotification();
+    const isCompleted = completedAnchors.includes(id);
+    const updated = isCompleted
+      ? completedAnchors.filter((it) => it !== id)
+      : [...completedAnchors, id];
+
+    setCompletedAnchors(updated);
+    try {
+      await AsyncStorage.setItem(getTodayKey(), JSON.stringify(updated));
+    } catch {
+      // Ignore
+    }
   };
 
   const handleRefresh = async () => {
@@ -223,6 +251,32 @@ export const RoutineHome = ({ onNavigate }: Props) => {
             </TouchableOpacity>
           </View>
 
+          {/* Daily Sovereignty Progress Meter (Forest/Opal Gamification Low-Hanging Fruit) */}
+          <View style={styles.sovereigntyMeterBox}>
+            <View style={styles.sovereigntyMeterTop}>
+              <Text style={styles.sovereigntyMeterLabel}>
+                🔥 {completedAnchors.length} OF {items.filter(i => i.enabled).length} ANCHORS SEALED
+              </Text>
+              <Text style={styles.sovereigntyMeterPercent}>
+                {items.filter(i => i.enabled).length > 0
+                  ? Math.round((completedAnchors.length / items.filter(i => i.enabled).length) * 100)
+                  : 0}% SOVEREIGNTY
+              </Text>
+            </View>
+            <View style={styles.sovereigntyMeterTrack}>
+              <View
+                style={[
+                  styles.sovereigntyMeterFill,
+                  {
+                    width: `${items.filter(i => i.enabled).length > 0
+                      ? Math.min(100, Math.round((completedAnchors.length / items.filter(i => i.enabled).length) * 100))
+                      : 0}%`,
+                  },
+                ]}
+              />
+            </View>
+          </View>
+
           {/* Continuous Vertical Track */}
           <View style={styles.timelineTrack} />
 
@@ -275,15 +329,36 @@ export const RoutineHome = ({ onNavigate }: Props) => {
                         <Text style={styles.cardTime}>{item.timeDisplay}</Text>
                       </View>
 
-                      {/* Notification Bell */}
-                      <TouchableOpacity
-                        onPress={() => handleToggleBell(item.id)}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      >
-                        <Text style={[styles.bellIcon, !item.notificationEnabled && styles.bellMuted]}>
-                          {item.notificationEnabled ? '🔔' : '🔕'}
-                        </Text>
-                      </TouchableOpacity>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                        {/* 1-Tap Anchor Completion (Forest/Opal Low-Hanging Fruit) */}
+                        <TouchableOpacity
+                          style={[
+                            styles.completeCheckBtn,
+                            completedAnchors.includes(item.id) && styles.completeCheckBtnDone,
+                          ]}
+                          onPress={() => handleToggleComplete(item.id)}
+                          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                        >
+                          <Text
+                            style={[
+                              styles.completeCheckText,
+                              completedAnchors.includes(item.id) && styles.completeCheckTextDone,
+                            ]}
+                          >
+                            {completedAnchors.includes(item.id) ? '✓ SEALED' : '○ SEAL'}
+                          </Text>
+                        </TouchableOpacity>
+
+                        {/* Notification Bell */}
+                        <TouchableOpacity
+                          onPress={() => handleToggleBell(item.id)}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        >
+                          <Text style={[styles.bellIcon, !item.notificationEnabled && styles.bellMuted]}>
+                            {item.notificationEnabled ? '🔔' : '🔕'}
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
                     </View>
 
                     {/* Card Title & Subtitle */}
@@ -375,6 +450,67 @@ export const RoutineHome = ({ onNavigate }: Props) => {
 };
 
 const styles = StyleSheet.create({
+  sovereigntyMeterBox: {
+    backgroundColor: '#121612',
+    borderRadius: 14,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#222B22',
+    marginBottom: 16,
+  },
+  sovereigntyMeterTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  sovereigntyMeterLabel: {
+    ...TYPOGRAPHY.caption,
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#FFB800',
+    letterSpacing: 1,
+  },
+  sovereigntyMeterPercent: {
+    ...TYPOGRAPHY.caption,
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#39D98A',
+    letterSpacing: 1,
+  },
+  sovereigntyMeterTrack: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#1C241C',
+    overflow: 'hidden',
+  },
+  sovereigntyMeterFill: {
+    height: '100%',
+    backgroundColor: '#FFB800',
+    borderRadius: 3,
+  },
+  completeCheckBtn: {
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    backgroundColor: '#141814',
+    borderWidth: 1,
+    borderColor: '#293329',
+  },
+  completeCheckBtnDone: {
+    backgroundColor: '#182E1C',
+    borderColor: '#39D98A',
+  },
+  completeCheckText: {
+    ...TYPOGRAPHY.caption,
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#8E958A',
+    letterSpacing: 0.5,
+  },
+  completeCheckTextDone: {
+    color: '#39D98A',
+  },
   timelineHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

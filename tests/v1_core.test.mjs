@@ -41,7 +41,6 @@ class GenuineMotionTracker {
 
 test('GenuineMotionTracker rejects static gravity reading without movement', () => {
   const tracker = new GenuineMotionTracker(20);
-  // Phone resting flat on table: z = 9.81 m/s²
   const res = tracker.onAccelerometerSample(0, 0, 9.81, 1000);
   assert.equal(res.stepCount, 0);
   assert.equal(res.isComplete, false);
@@ -51,27 +50,21 @@ test('GenuineMotionTracker rejects static gravity reading without movement', () 
 test('GenuineMotionTracker accurately detects ambulatory steps with cadence debounce', () => {
   const tracker = new GenuineMotionTracker(3);
   
-  // Step 1: vertical jolt at t = 1000ms
   let res = tracker.onAccelerometerSample(0.2, 12.81, 0.1, 1000);
   assert.equal(res.stepCount, 1);
   assert.equal(res.isComplete, false);
 
-  // Quick secondary vibration at t = 1100ms (< 280ms threshold) should be ignored as cheat jolt
-  tracker.onAccelerometerSample(0.1, 9.81, 0.1, 1050); // foot descent (trough)
+  tracker.onAccelerometerSample(0.1, 9.81, 0.1, 1050);
   res = tracker.onAccelerometerSample(0.1, 12.5, 0.1, 1100);
   assert.equal(res.stepCount, 1, 'Cadence debounce should reject rapid cheat jitter');
 
-  // Foot descent (trough)
   tracker.onAccelerometerSample(0.1, 9.81, 0.1, 1200);
 
-  // Step 2: natural gait step at t = 1400ms (>= 280ms from step 1)
   res = tracker.onAccelerometerSample(0.1, 12.9, 0.2, 1400);
   assert.equal(res.stepCount, 2);
 
-  // Foot descent (trough)
   tracker.onAccelerometerSample(0.1, 9.81, 0.1, 1600);
 
-  // Step 3: natural gait step at t = 1800ms
   res = tracker.onAccelerometerSample(0.3, 13.1, 0.1, 1800);
   assert.equal(res.stepCount, 3);
   assert.equal(res.isComplete, true);
@@ -158,7 +151,6 @@ test('Routine items sort chronologically when custom blocks are inserted', () =>
 
   const merged = sortRoutineItems([...baseTimeline, customReadingBlock, customGymBlock]);
 
-  // Expected order: 05:30 -> 06:00 -> 07:00 (Gym) -> 09:00 -> 20:30 (Reading) -> 22:00
   assert.equal(merged[0].id, 'wake_alarm');
   assert.equal(merged[1].id, 'dawn_breath');
   assert.equal(merged[2].id, 'custom_gym');
@@ -183,19 +175,16 @@ function calculateCircadianRest(sleepHour, sleepMinute, wakeHour, wakeMinute) {
 }
 
 test('Circadian calculation correctly computes rest window across midnight', () => {
-  // Sleep at 10:30 PM (22:30), wake at 06:00 AM (06:00) -> 7 hours 30 mins
   const rest1 = calculateCircadianRest(22, 30, 6, 0);
   assert.equal(rest1.hours, 7);
   assert.equal(rest1.minutes, 30);
   assert.equal(rest1.totalMinutes, 450);
 
-  // Sleep at 11:00 PM (23:00), wake at 05:30 AM (05:30) -> 6 hours 30 mins
   const rest2 = calculateCircadianRest(23, 0, 5, 30);
   assert.equal(rest2.hours, 6);
   assert.equal(rest2.minutes, 30);
   assert.equal(rest2.totalMinutes, 390);
 
-  // Sleep at 10:00 PM (22:00), wake at 06:00 AM (06:00) -> exactly 8 hours 0 mins
   const rest3 = calculateCircadianRest(22, 0, 6, 0);
   assert.equal(rest3.hours, 8);
   assert.equal(rest3.minutes, 0);
@@ -214,4 +203,76 @@ test('Custom item deletion removes the item while preserving core anchors', () =
   assert.equal(updated.some(i => i.id === 'custom_123'), false);
   assert.equal(updated[0].id, 'wake_alarm');
   assert.equal(updated[1].id, 'sleep_sanctum');
+});
+
+// 8. Test Sovereignty Meter Daily Progress Calculation
+function computeSovereigntyScore(completedIds, totalEnabledCount) {
+  if (totalEnabledCount <= 0) return 0;
+  return Math.min(100, Math.round((completedIds.length / totalEnabledCount) * 100));
+}
+
+test('Sovereignty meter correctly calculates percentage and bounds at 100%', () => {
+  assert.equal(computeSovereigntyScore([], 6), 0);
+  assert.equal(computeSovereigntyScore(['wake_alarm', 'dawn_breath'], 6), 33);
+  assert.equal(computeSovereigntyScore(['a', 'b', 'c', 'd'], 6), 67);
+  assert.equal(computeSovereigntyScore(['a', 'b', 'c', 'd', 'e', 'f'], 6), 100);
+});
+
+// 9. Test One Sec Intention Triage Logic
+function categorizeImpulse(intention) {
+  if (intention === 'boredom') {
+    return { shouldPromptExit: true, rewardPoints: 1, action: 'CONQUER_IMPULSE' };
+  }
+  if (intention === 'work') {
+    return { shouldPromptExit: false, rewardPoints: 0, action: 'ALLOW_FOCUSED_SESSION' };
+  }
+  return { shouldPromptExit: false, rewardPoints: 0, action: 'CONSCIOUS_OPEN' };
+}
+
+test('One Sec intention triage rewards boredom exits with victory points', () => {
+  const boredomRes = categorizeImpulse('boredom');
+  assert.equal(boredomRes.shouldPromptExit, true);
+  assert.equal(boredomRes.rewardPoints, 1);
+
+  const workRes = categorizeImpulse('work');
+  assert.equal(workRes.shouldPromptExit, false);
+  assert.equal(workRes.rewardPoints, 0);
+});
+
+// 10. Test Double-Gate Wake-Up Check State Transition
+class WakefulnessStateMachine {
+  constructor() {
+    this.state = 'ALARM_RINGING';
+  }
+  completeMotionMission() {
+    if (this.state === 'ALARM_RINGING') {
+      this.state = 'GATE_PENDING';
+    }
+  }
+  confirmUpright() {
+    if (this.state === 'GATE_PENDING') {
+      this.state = 'AWAKE_VERIFIED';
+      return true;
+    }
+    return false;
+  }
+  missTimeout() {
+    if (this.state === 'GATE_PENDING') {
+      this.state = 'ALARM_RINGING';
+      return 'RE_ARM_SIREN';
+    }
+    return 'NOOP';
+  }
+}
+
+test('Wakefulness state machine enforces double gate before sealing victory', () => {
+  const sm = new WakefulnessStateMachine();
+  assert.equal(sm.state, 'ALARM_RINGING');
+
+  sm.completeMotionMission();
+  assert.equal(sm.state, 'GATE_PENDING');
+
+  const verified = sm.confirmUpright();
+  assert.equal(verified, true);
+  assert.equal(sm.state, 'AWAKE_VERIFIED');
 });

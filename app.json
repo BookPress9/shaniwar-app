@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Shaniwar",
+    "name": "Shaniwar: Living Dincharya",
     "slug": "shaniwar",
     "version": "1.0.0",
     "scheme": "shaniwar",
@@ -8,7 +8,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "splash": {
-      "backgroundColor": "#0D0D0D",
+      "backgroundColor": "#070807",
       "resizeMode": "contain"
     },
     "ios": {
@@ -30,8 +30,17 @@
     "android": {
       "package": "com.shaniwar.app",
       "versionCode": 1,
+      "permissions": [
+        "RECEIVE_BOOT_COMPLETED",
+        "SCHEDULE_EXACT_ALARM",
+        "USE_EXACT_ALARM",
+        "HIGH_SAMPLING_RATE_SENSORS",
+        "POST_NOTIFICATIONS",
+        "VIBRATE",
+        "WAKE_LOCK"
+      ],
       "adaptiveIcon": {
-        "backgroundColor": "#0D0D0D",
+        "backgroundColor": "#070807",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
