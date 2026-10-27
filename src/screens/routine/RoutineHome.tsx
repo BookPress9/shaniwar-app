@@ -179,6 +179,35 @@ export const RoutineHome = ({ onNavigate }: Props) => {
           </View>
         )}
 
+        {/* Hardware Action & Test Triggers */}
+        <View style={styles.hardwareTriggersCard}>
+          <Text style={styles.hardwareTriggersTitle}>HARDWARE CONTROLS & TEST TRIGGERS</Text>
+          <Text style={styles.hardwareTriggersSub}>Test native hardware shields on this device:</Text>
+          <View style={styles.hardwareButtonsRow}>
+            <TouchableOpacity
+              style={styles.triggerAlarmBtn}
+              onPress={() => {
+                HapticService.heavyImpact();
+                onNavigate?.('AlarmMission');
+              }}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.triggerAlarmBtnText}>⏰ Trigger Wake Alarm</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.triggerShieldBtn}
+              onPress={() => {
+                HapticService.heavyImpact();
+                onNavigate?.('InstagramShieldIntercept');
+              }}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.triggerShieldBtnText}>🛡️ Tap Instagram</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* Timeline Progression Arc */}
         <View style={styles.timelineContainer}>
           {/* Continuous Vertical Track */}
@@ -478,6 +507,64 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     fontSize: 10,
     marginBottom: 4,
+  },
+  hardwareTriggersCard: {
+    backgroundColor: '#141713',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 184, 0, 0.25)',
+    marginBottom: 20,
+  },
+  hardwareTriggersTitle: {
+    ...TYPOGRAPHY.caption,
+    color: '#FFB800',
+    fontWeight: '800',
+    letterSpacing: 1.5,
+    fontSize: 10,
+    marginBottom: 4,
+  },
+  hardwareTriggersSub: {
+    ...TYPOGRAPHY.caption,
+    color: '#8E958A',
+    fontSize: 11,
+    marginBottom: 12,
+  },
+  hardwareButtonsRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  triggerAlarmBtn: {
+    flex: 1,
+    backgroundColor: '#E84545',
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  triggerAlarmBtnText: {
+    ...TYPOGRAPHY.caption,
+    color: '#FFF',
+    fontWeight: '800',
+    fontSize: 10,
+    letterSpacing: 0.5,
+  },
+  triggerShieldBtn: {
+    flex: 1,
+    backgroundColor: '#1E241D',
+    borderRadius: 10,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: '#384336',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  triggerShieldBtnText: {
+    ...TYPOGRAPHY.caption,
+    color: '#E0E5DC',
+    fontWeight: '800',
+    fontSize: 10,
+    letterSpacing: 0.5,
   },
   activeBannerTitle: {
     ...TYPOGRAPHY.body,

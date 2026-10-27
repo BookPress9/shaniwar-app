@@ -124,6 +124,7 @@ export const AlarmMission = ({ onBack }: { onBack?: () => void }) => {
       {/* Main Mission Display */}
       <View style={styles.missionCircleContainer}>
         <View style={[styles.pulseCircle, isDone && styles.pulseCircleDone]}>
+          <Text style={styles.timeRingerText}>05:45 AM</Text>
           <Text style={styles.counterText}>
             {selectedType === 'photo' || selectedType === 'qr'
               ? isDone ? 'VERIFIED' : 'READY'
@@ -133,16 +134,27 @@ export const AlarmMission = ({ onBack }: { onBack?: () => void }) => {
             {selectedType === 'shake'
               ? 'Vigorous Shakes'
               : selectedType === 'walk'
-              ? 'Steps Taken'
+              ? 'Genuine Steps Required'
               : selectedType === 'photo'
               ? 'Walk 10 Steps + Frame Capture'
               : 'Scan Bathroom QR'}
           </Text>
+
+          {/* Step Progress Bar */}
+          <View style={styles.progressBarTrack}>
+            <View
+              style={[
+                styles.progressBarFill,
+                { width: `${Math.min(100, (currentCount / targetCount) * 100)}%` },
+              ]}
+            />
+          </View>
+
           {dynamicAccel > 0 && (
             <Text style={styles.accelText}>⚡ {dynamicAccel} m/s² gait impulse</Text>
           )}
           {isHardwareActive && (
-            <Text style={styles.hardwareBadge}>🟢 CoreMotion Sensor Live</Text>
+            <Text style={styles.hardwareBadge}>🟢 Accelerometer Hardware Live</Text>
           )}
         </View>
       </View>
@@ -254,6 +266,14 @@ const styles = StyleSheet.create({
     borderColor: COLORS.SUCCESS,
     backgroundColor: 'rgba(57, 217, 138, 0.1)',
   },
+  timeRingerText: {
+    ...TYPOGRAPHY.caption,
+    color: '#E84545',
+    fontWeight: '800',
+    fontSize: 12,
+    letterSpacing: 2,
+    marginBottom: 4,
+  },
   counterText: {
     ...TYPOGRAPHY.h1,
     fontSize: 32,
@@ -262,8 +282,22 @@ const styles = StyleSheet.create({
   counterSub: {
     ...TYPOGRAPHY.caption,
     color: COLORS.TEXT_MUTED,
-    marginTop: 8,
+    marginTop: 4,
     textAlign: 'center',
+    fontSize: 11,
+  },
+  progressBarTrack: {
+    width: 140,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#351A1A',
+    marginTop: 10,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#E84545',
+    borderRadius: 3,
   },
   accelText: {
     ...TYPOGRAPHY.mono,

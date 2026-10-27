@@ -1,311 +1,328 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  Animated,
-  Dimensions,
-  TextInput,
-  KeyboardAvoidingView,
-  Platform,
+  ScrollView,
+  SafeAreaView,
+  StatusBar,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS } from '../../theme/colors';
 import { TYPOGRAPHY } from '../../theme/typography';
+import { HapticService } from '../../services/haptics';
+import {
+  routineService,
+  DincharyaArchetype,
+  ARCHETYPES,
+} from '../../services/routineService';
+import { syncOutbox } from '../../services/syncOutbox';
+import { isSupabaseConfigured, supabase } from '../../services/supabase';
 
-const { width } = Dimensions.get('window');
 const ONBOARDING_DONE_KEY = '@hybrid_monk_onboarded_v1';
 
-interface OnboardingScreenProps {
+interface Props {
   onComplete: () => void;
 }
 
-type Step = 0 | 1 | 2 | 3;
-
-const STEPS = [
-  {
-    id: 0,
-    label: 'STOP.',
-    headline: 'Most apps want your attention.',
-    body: 'This one trains it.',
-    sub: 'Shaniwar by The Hybrid Monk is a daily discipline engine.\nRooted in Dincharya: wake awake, protect focus, stay anchored.',
-    cta: 'Continue',
-  },
-  {
-    id: 1,
-    label: 'DINCHARYA',
-    headline: 'The Sovereign Arc of your Day.',
-    body: 'A wake alarm that requires you to move.\nProtection windows that guard your presence.\nConsciousness injected directly into your rhythm.',
-    sub: 'Ancient monks left the world. We are modern monks—mastering the world while staying anchored.',
-    cta: 'Continue',
-  },
-  {
-    id: 2,
-    label: 'SADHNA',
-    headline: 'Ascend the 33 vertebrae.',
-    body: 'Ancient breath practices. Genuine attention training.\nNo scores. No streaks. Just the practice.',
-    sub: 'Each session is its own complete thing.',
-    cta: 'Continue',
-  },
-  {
-    id: 3,
-    label: 'MANOVIGYAN',
-    headline: 'Know what you are not.',
-    body: 'Self-inquiry, not self-help.\nNotice the patterns. Name the drift.',
-    sub: 'The mirror shows nothing it did not find in you.',
-    cta: 'Enter the monastery',
-  },
-];
-
-export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
-  const [step, setStep] = useState<Step>(0);
-  const [sankalp, setSankalp] = useState('');
-  const [showSankalp, setShowSankalp] = useState(false);
-  const fadeAnim = useRef(new Animated.Value(1)).current;
-  const slideAnim = useRef(new Animated.Value(0)).current;
-
-  const transitionTo = (nextStep: number) => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 0, duration: 180, useNativeDriver: true }),
-      Animated.timing(slideAnim, { toValue: -30, duration: 180, useNativeDriver: true }),
-    ]).start(() => {
-      setStep(nextStep as Step);
-      slideAnim.setValue(30);
-      Animated.parallel([
-        Animated.timing(fadeAnim, { toValue: 1, duration: 240, useNativeDriver: true }),
-        Animated.timing(slideAnim, { toValue: 0, duration: 240, useNativeDriver: true }),
-      ]).start();
-    });
-  };
-
-  const handleContinue = () => {
-    if (step < 3) {
-      transitionTo(step + 1);
-    } else if (!showSankalp) {
-      // On last step: offer optional Sankalp before entering
-      setShowSankalp(true);
-    } else {
-      handleFinish();
-    }
-  };
-
-  const handleFinish = async () => {
-    try {
-      if (sankalp.trim()) {
-        await AsyncStorage.setItem('@hybrid_monk_sankalp', sankalp.trim().slice(0, 120));
-      }
-      await AsyncStorage.setItem(ONBOARDING_DONE_KEY, 'true');
-    } catch {
-      // Non-blocking
-    }
-    onComplete();
-  };
-
-  const current = STEPS[step];
-  const progress = (step + 1) / STEPS.length;
-
-  return (
-    <KeyboardAvoidingView
-      style={styles.root}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      {/* Progress bar */}
-      <View style={styles.progressTrack}>
-        <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
-      </View>
-
-      <Animated.View
-        style={[styles.content, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}
-      >
-        {/* Step label */}
-        <Text style={[styles.stepLabel, { color: stepColor(step) }]}>{current.label}</Text>
-
-        {/* Headline */}
-        <Text style={styles.headline}>{current.headline}</Text>
-
-        {/* Body */}
-        <Text style={styles.body}>{current.body}</Text>
-
-        {/* Sub */}
-        <Text style={styles.sub}>{current.sub}</Text>
-
-        {/* Sankalp input — last step only */}
-        {showSankalp && step === 3 && (
-          <View style={styles.sankalpContainer}>
-            <Text style={styles.sankalpLabel}>Where do you want to reach?</Text>
-            <Text style={styles.sankalpHint}>One line. Your words. Stays on this device.</Text>
-            <TextInput
-              style={styles.sankalpInput}
-              value={sankalp}
-              onChangeText={(t) => setSankalp(t.slice(0, 120))}
-              placeholder="your intention..."
-              placeholderTextColor={COLORS.TEXT_MUTED}
-              maxLength={120}
-              returnKeyType="done"
-              onSubmitEditing={handleFinish}
-              autoFocus
-            />
-            <TouchableOpacity onPress={handleFinish} style={styles.skipSankalp}>
-              <Text style={styles.skipLabel}>Skip, just enter</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </Animated.View>
-
-      {/* CTA */}
-      {!showSankalp && (
-        <TouchableOpacity style={styles.cta} onPress={handleContinue} activeOpacity={0.85}>
-          <Text style={styles.ctaText}>{current.cta}</Text>
-        </TouchableOpacity>
-      )}
-
-      {showSankalp && !step && null}
-
-      {showSankalp && (
-        <TouchableOpacity style={styles.cta} onPress={handleFinish} activeOpacity={0.85}>
-          <Text style={styles.ctaText}>Enter the monastery</Text>
-        </TouchableOpacity>
-      )}
-
-      {/* Step dots */}
-      <View style={styles.dots}>
-        {STEPS.map((_, i) => (
-          <View
-            key={i}
-            style={[styles.dot, i === step && { backgroundColor: stepColor(step), width: 20 }]}
-          />
-        ))}
-      </View>
-    </KeyboardAvoidingView>
-  );
-};
-
-function stepColor(step: Step): string {
-  switch (step) {
-    case 0: return COLORS.PRIMARY;
-    case 1: return COLORS.ROUTINE_RED;
-    case 2: return COLORS.SADHNA_VIOLET;
-    case 3: return COLORS.MANOVIGYAN_CYAN;
-    default: return COLORS.PRIMARY;
-  }
-}
-
-export async function hasCompletedOnboarding(): Promise<boolean> {
+export const hasCompletedOnboarding = async (): Promise<boolean> => {
   try {
-    const v = await AsyncStorage.getItem(ONBOARDING_DONE_KEY);
-    return v === 'true';
+    const val = await AsyncStorage.getItem(ONBOARDING_DONE_KEY);
+    return val === 'true';
   } catch {
     return false;
   }
-}
+};
+
+export const OnboardingScreen: React.FC<Props> = ({ onComplete }) => {
+  const [selectedArch, setSelectedArch] = useState<DincharyaArchetype>('builder');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSelectArchetype = (arch: DincharyaArchetype) => {
+    HapticService.selection();
+    setSelectedArch(arch);
+  };
+
+  const handleLockIn = async () => {
+    setIsLoading(true);
+    HapticService.heavyImpact();
+
+    try {
+      // 1. Calibrate and persist the selected archetype routine
+      await routineService.applyArchetype(selectedArch);
+
+      // 2. Mark onboarding completed in AsyncStorage
+      await AsyncStorage.setItem(ONBOARDING_DONE_KEY, 'true');
+
+      // 3. Queue profile setup to Supabase outbox if user exists
+      if (isSupabaseConfigured) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await syncOutbox.enqueue('profiles', {
+            id: user.id,
+            monk_title: selectedArch.toUpperCase(),
+            updated_at: new Date().toISOString(),
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('[Onboarding] Error applying archetype:', e);
+    } finally {
+      setIsLoading(false);
+      onComplete();
+    }
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#070807" />
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Top Header */}
+        <View style={styles.header}>
+          <Text style={styles.eyebrow}>THE SOVEREIGN RETURN</Text>
+          <Text style={styles.title}>The world is loud.</Text>
+          <Text style={styles.titleEm}>Be here.</Text>
+          <Text style={styles.subtitle}>
+            Ancient monks left the world behind to find themselves. We are the modern monks—living in
+            the world, mastering the world, staying anchored.
+          </Text>
+        </View>
+
+        {/* Archetype Selection Section */}
+        <View style={styles.archetypeSection}>
+          <Text style={styles.sectionLabel}>SELECT YOUR DAILY ARCHETYPE</Text>
+
+          <View style={styles.archetypeGrid}>
+            {ARCHETYPES.map((arch) => {
+              const isSelected = selectedArch === arch.id;
+              const defaultWakeTime =
+                arch.id === 'builder'
+                  ? '05:45 AM'
+                  : arch.id === 'student'
+                  ? '06:30 AM'
+                  : arch.id === 'parent'
+                  ? '06:00 AM'
+                  : '06:45 AM';
+
+              return (
+                <TouchableOpacity
+                  key={arch.id}
+                  style={[
+                    styles.archCard,
+                    isSelected && styles.archCardSelected,
+                  ]}
+                  onPress={() => handleSelectArchetype(arch.id)}
+                  activeOpacity={0.85}
+                >
+                  <View style={styles.archIconContainer}>
+                    <Text style={styles.archIcon}>{arch.icon}</Text>
+                  </View>
+                  <View style={styles.archContent}>
+                    <View style={styles.archTopRow}>
+                      <Text
+                        style={[
+                          styles.archName,
+                          isSelected && styles.archNameSelected,
+                        ]}
+                      >
+                        {arch.name}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.archTime,
+                          isSelected && styles.archTimeSelected,
+                        ]}
+                      >
+                        {defaultWakeTime}
+                      </Text>
+                    </View>
+                    <Text style={styles.archTagline}>{arch.tagline}</Text>
+                    <Text style={styles.archDescription} numberOfLines={2}>
+                      {arch.description}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* Bottom CTA */}
+        <View style={styles.bottomSection}>
+          <TouchableOpacity
+            style={styles.lockInBtn}
+            onPress={handleLockIn}
+            activeOpacity={0.85}
+            disabled={isLoading}
+          >
+            <Text style={styles.lockInBtnText}>
+              {isLoading ? 'CALIBRATING ARC...' : 'LOCK IN SOVEREIGN DINCHARYA →'}
+            </Text>
+          </TouchableOpacity>
+          <Text style={styles.footnote}>
+            No account required. Fully local-first, privacy-guaranteed & offline ready.
+          </Text>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+};
 
 const styles = StyleSheet.create({
-  root: {
+  container: {
     flex: 1,
-    backgroundColor: COLORS.BACKGROUND,
-    paddingHorizontal: 28,
-    paddingTop: 60,
+    backgroundColor: '#070807',
+  },
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingTop: 24,
     paddingBottom: 40,
     justifyContent: 'space-between',
+    minHeight: '100%',
   },
-  progressTrack: {
-    height: 2,
-    backgroundColor: COLORS.BORDER_SUBTLE,
-    borderRadius: 1,
-    marginBottom: 48,
-  },
-  progressFill: {
-    height: 2,
-    backgroundColor: COLORS.PRIMARY,
-    borderRadius: 1,
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  stepLabel: {
-    ...TYPOGRAPHY.caption,
-    letterSpacing: 3,
-    fontSize: 11,
-    marginBottom: 20,
-  },
-  headline: {
-    ...TYPOGRAPHY.h1,
-    color: COLORS.TEXT_PRIMARY,
-    fontSize: 28,
-    lineHeight: 36,
-    marginBottom: 20,
-  },
-  body: {
-    ...TYPOGRAPHY.body,
-    color: COLORS.TEXT_SECONDARY,
-    fontSize: 16,
-    lineHeight: 26,
+  header: {
     marginBottom: 24,
   },
-  sub: {
-    ...TYPOGRAPHY.body,
-    color: COLORS.TEXT_MUTED,
-    fontSize: 13,
-    lineHeight: 20,
-    fontStyle: 'italic',
-  },
-  sankalpContainer: {
-    marginTop: 36,
-  },
-  sankalpLabel: {
-    ...TYPOGRAPHY.h3,
-    color: COLORS.TEXT_PRIMARY,
-    marginBottom: 6,
-  },
-  sankalpHint: {
+  eyebrow: {
     ...TYPOGRAPHY.caption,
-    color: COLORS.TEXT_MUTED,
-    marginBottom: 14,
+    color: '#FFB800',
+    letterSpacing: 2.5,
+    fontSize: 10,
+    fontWeight: '800',
+    marginBottom: 8,
   },
-  sankalpInput: {
-    backgroundColor: COLORS.CARD,
-    borderWidth: 1,
-    borderColor: COLORS.BORDER_SUBTLE,
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    color: COLORS.TEXT_PRIMARY,
-    fontSize: 15,
+  title: {
+    fontSize: 34,
+    fontWeight: '300',
+    color: '#F4F4EC',
+    lineHeight: 40,
+  },
+  titleEm: {
+    fontSize: 34,
+    fontWeight: '700',
+    color: '#FFB800',
+    lineHeight: 42,
     marginBottom: 12,
   },
-  skipSankalp: {
-    alignSelf: 'flex-start',
+  subtitle: {
+    ...TYPOGRAPHY.body,
+    fontSize: 13,
+    lineHeight: 20,
+    color: '#9CA395',
   },
-  skipLabel: {
+  archetypeSection: {
+    marginBottom: 28,
+  },
+  sectionLabel: {
     ...TYPOGRAPHY.caption,
-    color: COLORS.TEXT_MUTED,
-    textDecorationLine: 'underline',
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#B49860',
+    letterSpacing: 1.5,
+    marginBottom: 14,
   },
-  cta: {
-    backgroundColor: COLORS.PRIMARY,
-    borderRadius: 14,
-    paddingVertical: 18,
-    alignItems: 'center',
-    marginTop: 32,
+  archetypeGrid: {
+    gap: 12,
   },
-  ctaText: {
-    ...TYPOGRAPHY.h3,
-    color: '#0D0D0D',
-    fontSize: 15,
-    letterSpacing: 0.5,
-  },
-  dots: {
+  archCard: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 6,
-    marginTop: 20,
+    alignItems: 'center',
+    backgroundColor: '#101210',
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1.5,
+    borderColor: '#222820',
   },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: COLORS.BORDER_SUBTLE,
+  archCardSelected: {
+    backgroundColor: '#161A14',
+    borderColor: '#FFB800',
+    shadowColor: '#FFB800',
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  archIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#191E18',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+  archIcon: {
+    fontSize: 22,
+  },
+  archContent: {
+    flex: 1,
+  },
+  archTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  archName: {
+    ...TYPOGRAPHY.body,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#D8DCD2',
+  },
+  archNameSelected: {
+    color: '#FFF',
+  },
+  archTime: {
+    ...TYPOGRAPHY.caption,
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#71796D',
+  },
+  archTimeSelected: {
+    color: '#FFB800',
+  },
+  archTagline: {
+    ...TYPOGRAPHY.caption,
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#8E958A',
+    marginBottom: 4,
+  },
+  archDescription: {
+    ...TYPOGRAPHY.caption,
+    fontSize: 10,
+    lineHeight: 14,
+    color: '#656D60',
+  },
+  bottomSection: {
+    paddingTop: 12,
+  },
+  lockInBtn: {
+    backgroundColor: '#FFB800',
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#FFB800',
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    elevation: 5,
+  },
+  lockInBtnText: {
+    ...TYPOGRAPHY.body,
+    color: '#070807',
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+  },
+  footnote: {
+    ...TYPOGRAPHY.caption,
+    color: '#555C50',
+    fontSize: 10,
+    textAlign: 'center',
+    marginTop: 10,
   },
 });
