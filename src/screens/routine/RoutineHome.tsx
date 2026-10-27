@@ -210,6 +210,19 @@ export const RoutineHome = ({ onNavigate }: Props) => {
 
         {/* Timeline Progression Arc */}
         <View style={styles.timelineContainer}>
+          <View style={styles.timelineHeaderRow}>
+            <Text style={styles.timelineHeaderTitle}>LIVING DINCHARYA ARC</Text>
+            <TouchableOpacity
+              style={styles.quickAddBlockBtn}
+              onPress={() => {
+                HapticService.selection();
+                setIsCustomizeOpen(true);
+              }}
+            >
+              <Text style={styles.quickAddBlockText}>+ Add Routine Block</Text>
+            </TouchableOpacity>
+          </View>
+
           {/* Continuous Vertical Track */}
           <View style={styles.timelineTrack} />
 
@@ -232,6 +245,8 @@ export const RoutineHome = ({ onNavigate }: Props) => {
                         ? '🛑'
                         : item.type === 'practice'
                         ? '⚡'
+                        : item.isCustom || item.type === 'custom'
+                        ? '⭐'
                         : '🌙'}
                     </Text>
                   </View>
@@ -252,6 +267,7 @@ export const RoutineHome = ({ onNavigate }: Props) => {
                             styles.cardTag,
                             isMonkPath && { color: '#FFB800' },
                             item.type === 'protection' && { color: '#6C63FF' },
+                            (item.isCustom || item.type === 'custom') && { color: '#39D98A' },
                           ]}
                         >
                           {item.tag}
@@ -300,9 +316,24 @@ export const RoutineHome = ({ onNavigate }: Props) => {
                           ? 'TRIGGER OSHO STOP 🛑'
                           : item.type === 'practice'
                           ? 'IGNITE BREATH ⚡'
+                          : item.isCustom || item.type === 'custom'
+                          ? 'CUSTOM ROUTINE ANCHOR ⏱️'
                           : 'COMPLETE REVIEW 🌙'}
                       </Text>
                     </TouchableOpacity>
+
+                    {(item.isCustom || item.type === 'custom') && (
+                      <TouchableOpacity
+                        style={styles.deleteCustomTimelineBtn}
+                        onPress={async () => {
+                          HapticService.lightImpact();
+                          await routineService.deleteItem(item.id);
+                          await loadData();
+                        }}
+                      >
+                        <Text style={styles.deleteCustomTimelineText}>🗑️ Remove Routine Block</Text>
+                      </TouchableOpacity>
+                    )}
 
                     {item.type === 'protection' && (
                       <TouchableOpacity
@@ -330,6 +361,7 @@ export const RoutineHome = ({ onNavigate }: Props) => {
         visible={isCustomizeOpen}
         onClose={() => setIsCustomizeOpen(false)}
         onSaved={loadData}
+        onRerunOnboarding={() => onNavigate?.('Onboarding')}
       />
 
       {/* iOS Instagram Blocker Wrapper Modal */}
@@ -343,6 +375,49 @@ export const RoutineHome = ({ onNavigate }: Props) => {
 };
 
 const styles = StyleSheet.create({
+  timelineHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingHorizontal: 4,
+  },
+  timelineHeaderTitle: {
+    ...TYPOGRAPHY.caption,
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#B49860',
+    letterSpacing: 1.5,
+  },
+  quickAddBlockBtn: {
+    backgroundColor: '#161F17',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#39D98A',
+  },
+  quickAddBlockText: {
+    ...TYPOGRAPHY.caption,
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#39D98A',
+  },
+  deleteCustomTimelineBtn: {
+    marginTop: 8,
+    paddingVertical: 6,
+    alignItems: 'center',
+    borderRadius: 8,
+    backgroundColor: '#191515',
+    borderWidth: 1,
+    borderColor: '#362222',
+  },
+  deleteCustomTimelineText: {
+    ...TYPOGRAPHY.caption,
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#E84545',
+  },
   container: {
     flex: 1,
     backgroundColor: '#0A0A0A',

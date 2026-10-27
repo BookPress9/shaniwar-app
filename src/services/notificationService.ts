@@ -25,6 +25,17 @@ if (Platform.OS !== 'web') {
 class NotificationService {
   private hasPermission = false;
 
+  async checkPermissions(): Promise<boolean> {
+    if (Platform.OS === 'web') return false;
+    try {
+      const { status } = await Notifications.getPermissionsAsync();
+      this.hasPermission = status === 'granted';
+      return this.hasPermission;
+    } catch {
+      return false;
+    }
+  }
+
   async requestPermissions(): Promise<boolean> {
     if (Platform.OS === 'web') return false;
 

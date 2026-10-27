@@ -56,6 +56,32 @@ export class MotionSensorService {
   isSensorAvailable(): boolean {
     return this.isAvailable;
   }
+
+  async checkAndRequestPermissions(): Promise<{ available: boolean; granted: boolean }> {
+    if (Platform.OS === 'web') {
+      return { available: false, granted: false };
+    }
+
+    try {
+      this.isAvailable = await Accelerometer.isAvailableAsync();
+      let granted = this.isAvailable;
+
+      if (typeof (Accelerometer as any).getPermissionsAsync === 'function') {
+        const perm = await (Accelerometer as any).getPermissionsAsync();
+        if (perm.status === 'granted') {
+          granted = true;
+        } else if (typeof (Accelerometer as any).requestPermissionsAsync === 'function') {
+          const req = await (Accelerometer as any).requestPermissionsAsync();
+          granted = req.status === 'granted';
+        }
+      }
+
+      return { available: this.isAvailable, granted };
+    } catch (e) {
+      console.warn('Motion sensor check error:', e);
+      return { available: false, granted: false };
+    }
+  }
 }
 
 export const motionSensorService = new MotionSensorService();

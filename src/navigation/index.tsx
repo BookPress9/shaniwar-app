@@ -137,6 +137,9 @@ export const RootNavigator = () => {
     if (currentSubScreen === 'InstagramShieldIntercept') {
       return <InstagramShieldIntercept onBack={handleBack} />;
     }
+    if (currentSubScreen === 'Onboarding') {
+      return <OnboardingScreen onComplete={handleBack} />;
+    }
     if (currentSubScreen === 'PaywallScreen') {
       return <PaywallScreen onBack={handleBack} />;
     }

@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { notificationService } from './notificationService';
 import { dbService } from './db';
 
-export type RoutineItemType = 'alarm' | 'protection' | 'practice' | 'transition';
+export type RoutineItemType = 'alarm' | 'protection' | 'practice' | 'transition' | 'custom';
 export type DincharyaArchetype = 'builder' | 'student' | 'parent' | 'professional';
 
 export interface ArchetypeMeta {
@@ -56,6 +56,7 @@ export interface RoutineTimelineItem {
   subtitle: string;
   tag: string;
   isHybridMonkPath?: boolean;
+  isCustom?: boolean;
   enabled: boolean;
   notificationEnabled: boolean;
   missionType?: 'walk' | 'shake' | 'photo';
@@ -607,11 +608,169 @@ class RoutineService {
     }
   }
 
-  private formatTimeDisplay(hour: number, minute: number): string {
-    const period = hour >= 12 ? 'PM' : 'AM';
-    const h12 = hour % 12 === 0 ? 12 : hour % 12;
-    const mStr = minute.toString().padStart(2, '0');
-    return `${h12.toString().padStart(2, '0')}:${mStr} ${period}`;
+  async updateSleepSanctum(hour: number, minute: number): Promise<void> {
+    const sleep = this.items.find((i) => i.id === 'sleep_sanctum');
+    if (sleep) {
+      sleep.hour = hour;
+      sleep.minute = minute;
+      sleep.timeDisplay = this.formatTimeDisplay(hour, minute);
+      if (sleep.notificationEnabled) {
+        await notificationService.scheduleRoutineReminder(
+          sleep.id,
+          sleep.notificationTitle,
+          sleep.notificationBody,
+          hour,
+          minute
+        );
+      }
+      await this.persistAndSync();
+    }
+  }
+
+  async addCustomItem(params: {
+    title: string;
+    subtitle?: string;
+    tag?: string;
+    hour: number;
+    minute: number;
+    endHour?: number;
+    endMinute?: number;
+    notificationEnabled?: boolean;
+    notificationTitle?: string;
+    notificationBody?: string;
+  }): Promise<RoutineTimelineItem> {
+    const id = `custom_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const timeDisplay = this.formatTimeDisplay(params.hour, params.minute, params.endHour, params.endMinute);
+    const tag = (params.tag || 'CUSTOM').toUpperCase();
+    const subtitle = params.subtitle || 'Personalized Routine Anchor';
+    const notifTitle = params.notificationTitle || `⏱️ ${params.title.toUpperCase()}`;
+    const notifBody = params.notificationBody || `Time for ${params.title}. Stay centered and focused.`;
+    const notificationEnabled = params.notificationEnabled !== false;
+
+    const newItem: RoutineTimelineItem = {
+      id,
+      type: 'custom',
+      title: params.title,
+      timeDisplay,
+      hour: params.hour,
+      minute: params.minute,
+      endHour: params.endHour,
+      endMinute: params.endMinute,
+      subtitle,
+      tag,
+      isCustom: true,
+      enabled: true,
+      notificationEnabled,
+      notificationTitle: notifTitle,
+      notificationBody: notifBody,
+    };
+
+    this.items.push(newItem);
+    this.sortItemsChronologically();
+    await this.persistAndSync();
+
+    if (notificationEnabled) {
+      await notificationService.scheduleRoutineReminder(
+        newItem.id,
+        notifTitle,
+        notifBody,
+        params.hour,
+        params.minute
+      );
+    }
+
+    return newItem;
+  }
+
+  async deleteItem(id: string): Promise<RoutineTimelineItem[]> {
+    this.items = this.items.filter((it) => it.id !== id);
+    await notificationService.cancelReminder(id);
+    await this.persistAndSync();
+    return [...this.items];
+  }
+
+  sortItemsChronologically(): void {
+    this.items.sort((a, b) => {
+      const aMins = a.hour * 60 + a.minute;
+      const bMins = b.hour * 60 + b.minute;
+      return aMins - bMins;
+    });
+  }
+
+  async saveCalibratedRoutine(params: {
+    archetype: DincharyaArchetype;
+    wakeHour: number;
+    wakeMinute: number;
+    wakeMission?: 'walk' | 'shake' | 'photo';
+    sleepHour: number;
+    sleepMinute: number;
+    customItems?: RoutineTimelineItem[];
+    enabledItemIds?: string[];
+  }): Promise<RoutineTimelineItem[]> {
+    this.currentArchetype = params.archetype;
+    await AsyncStorage.setItem(ARCHETYPE_KEY, params.archetype);
+
+    const baseItems: RoutineTimelineItem[] = JSON.parse(JSON.stringify(ARCHETYPE_PRESETS[params.archetype]));
+
+    const wake = baseItems.find((i) => i.id === 'wake_alarm');
+    if (wake) {
+      wake.hour = params.wakeHour;
+      wake.minute = params.wakeMinute;
+      if (params.wakeMission) wake.missionType = params.wakeMission;
+      wake.timeDisplay = this.formatTimeDisplay(params.wakeHour, params.wakeMinute);
+      wake.subtitle = `${wake.missionType === 'walk' ? '20-Step CoreMotion Walk' : '25 Shakes'} • Impossible to Snooze`;
+    }
+
+    const sleep = baseItems.find((i) => i.id === 'sleep_sanctum');
+    if (sleep) {
+      sleep.hour = params.sleepHour;
+      sleep.minute = params.sleepMinute;
+      sleep.timeDisplay = this.formatTimeDisplay(params.sleepHour, params.sleepMinute);
+    }
+
+    const custom = params.customItems || [];
+    const merged = [...baseItems, ...custom];
+
+    if (params.enabledItemIds) {
+      merged.forEach((item) => {
+        item.enabled = params.enabledItemIds!.includes(item.id);
+      });
+    }
+
+    this.items = merged;
+    this.sortItemsChronologically();
+    await this.persistAndSync();
+
+    await notificationService.cancelAll();
+    for (const item of this.items) {
+      if (item.enabled && item.notificationEnabled) {
+        await notificationService.scheduleRoutineReminder(
+          item.id,
+          item.notificationTitle,
+          item.notificationBody,
+          item.hour,
+          item.minute
+        );
+      }
+    }
+
+    return [...this.items];
+  }
+
+  formatTimeDisplay(hour: number, minute: number, endHour?: number, endMinute?: number): string {
+    const formatSingle = (h: number, m: number) => {
+      const period = h >= 12 ? 'PM' : 'AM';
+      const h12 = h % 12 === 0 ? 12 : h % 12;
+      const mStr = m.toString().padStart(2, '0');
+      return `${h12.toString().padStart(2, '0')}:${mStr} ${period}`;
+    };
+
+    const startStr = formatSingle(hour, minute);
+    if (endHour !== undefined) {
+      const endStr = formatSingle(endHour, endMinute || 0);
+      return `${startStr} – ${endStr}`;
+    }
+    return startStr;
   }
 
   private async persistAndSync(): Promise<void> {
