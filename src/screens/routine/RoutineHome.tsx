@@ -1,279 +1,733 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  RefreshControl,
+} from 'react-native';
 import { COLORS } from '../../theme/colors';
 import { TYPOGRAPHY } from '../../theme/typography';
-import { blockScheduler } from '../../features/focus/BlockScheduler';
+import {
+  routineService,
+  RoutineTimelineItem,
+  DincharyaArchetype,
+  ARCHETYPES,
+} from '../../services/routineService';
+import { naamJapaService } from '../../services/naamJapaService';
+import { HapticService } from '../../services/haptics';
+import { CustomizeRoutineModal } from './CustomizeRoutineModal';
+import { NaamJapaModal } from './NaamJapaModal';
+import { InstagramWrapperModal } from './InstagramWrapperModal';
 
-export const RoutineHome = ({ onNavigate }: { onNavigate?: (screen: string) => void }) => {
-  const [blocks, setBlocks] = useState(blockScheduler.getBlocks());
-  const activeMonks = 1428; // Ambient body doubling counter (Flipd DNA)
+interface Props {
+  onNavigate?: (screen: string, params?: any) => void;
+}
 
-  const toggleBlock = (id: string) => {
-    blockScheduler.toggleBlock(id);
-    setBlocks([...blockScheduler.getBlocks()]);
+export const RoutineHome = ({ onNavigate }: Props) => {
+  const [items, setItems] = useState<RoutineTimelineItem[]>([]);
+  const [activeItem, setActiveItem] = useState<RoutineTimelineItem | null>(null);
+  const [currentArchetype, setCurrentArchetype] = useState<DincharyaArchetype>('builder');
+  const [naamText, setNaamText] = useState<string>('OM NAMAH SHIVAYA');
+  const [currentTimeStr, setCurrentTimeStr] = useState<string>('');
+  const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
+  const [isNaamJapaOpen, setIsNaamJapaOpen] = useState(false);
+  const [isWrapperModalOpen, setIsWrapperModalOpen] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const activeMonks = 1428;
+
+  useEffect(() => {
+    loadData();
+
+    // Clock updater
+    const updateTime = () => {
+      const now = new Date();
+      const h = now.getHours();
+      const m = now.getMinutes().toString().padStart(2, '0');
+      const period = h >= 12 ? 'PM' : 'AM';
+      const h12 = h % 12 === 0 ? 12 : h % 12;
+      setCurrentTimeStr(`${h12}:${m} ${period}`);
+      setActiveItem(routineService.getCurrentActiveItem());
+    };
+
+    updateTime();
+    const interval = setInterval(updateTime, 10000); // Check every 10s
+    return () => clearInterval(interval);
+  }, []);
+
+  const loadData = async () => {
+    const routine = await routineService.getRoutine();
+    const arch = await routineService.getArchetype();
+    const japaCfg = await naamJapaService.getConfig();
+    setItems(routine);
+    setCurrentArchetype(arch);
+    setNaamText(japaCfg.naam);
+    setActiveItem(routineService.getCurrentActiveItem());
   };
 
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
+  };
+
+  const handleToggleBell = async (id: string) => {
+    HapticService.selection();
+    await routineService.toggleNotification(id);
+    await loadData();
+  };
+
+  const handleAction = (item: RoutineTimelineItem) => {
+    HapticService.heavyImpact();
+    if (item.id === 'wake_alarm') {
+      onNavigate?.('AlarmMission');
+    } else if (item.id === 'protection_window') {
+      onNavigate?.('FocusSession');
+    } else if (item.id === 'dawn_breath') {
+      onNavigate?.('HybridPracticeZap', { practiceType: 'kundalini_breath' });
+    } else if (item.id === 'midday_stop') {
+      onNavigate?.('HybridPracticeZap', { practiceType: 'osho_stop' });
+    } else if (item.id === 'evening_transition') {
+      onNavigate?.('EveningReview');
+    } else {
+      HapticService.lightImpact();
+    }
+  };
+
+  const activeArchMeta = ARCHETYPES.find((a) => a.id === currentArchetype) || ARCHETYPES[0];
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Header */}
+    <View style={styles.container}>
+      {/* Sticky Header */}
       <View style={styles.header}>
-        <Text style={styles.eyebrow}>DISCIPLINE OS</Text>
-        <Text style={styles.title}>ROUTINE</Text>
-        <View style={styles.ambientPill}>
-          <View style={styles.greenPulse} />
-          <Text style={styles.ambientText}>{activeMonks.toLocaleString()} Monks Locked In Now</Text>
+        <View>
+          <Text style={styles.eyebrow}>SHANIWAR • BY THE HYBRID MONK</Text>
+          <Text style={styles.title}>DINCHARYA • दिनचर्या</Text>
         </View>
-      </View>
-
-      {/* Action Alarm Launcher */}
-      <View style={styles.alarmCard}>
-        <View style={styles.alarmHeader}>
-          <Text style={styles.cardTag}>NEXT ACTION ALARM</Text>
-          <Text style={styles.alarmTime}>05:30 AM</Text>
-        </View>
-        <Text style={styles.alarmSub}>Mission: 20-Step Walk + Sink Photo CV Match</Text>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => onNavigate?.('AlarmMission')}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.actionButtonText}>TEST MORNING MISSION 🔥</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Focus Session Quick Jump */}
-      <View style={styles.focusCard}>
-        <Text style={styles.cardTag}>DEEP WORK COMMAND</Text>
-        <Text style={styles.focusTitle}>25-Min Monk Tree Focus</Text>
-        <TouchableOpacity
-          style={styles.secondaryButton}
-          onPress={() => onNavigate?.('FocusSession')}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.secondaryButtonText}>ENTER MONK GROVE 🌲</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Daily Monk Blocks */}
-      <View style={styles.sectionHeaderRow}>
-        <Text style={styles.sectionHeader}>TODAY'S MONK BLOCKS</Text>
-        <TouchableOpacity onPress={() => onNavigate?.('MonkBlocks')}>
-          <Text style={styles.linkText}>Manage →</Text>
-        </TouchableOpacity>
-      </View>
-
-      {blocks.map((block) => (
-        <View key={block.id} style={[styles.blockCard, block.isActive && styles.blockCardActive]}>
-          <View style={styles.blockInfo}>
-            <Text style={styles.blockName}>{block.name}</Text>
-            <Text style={styles.blockTime}>{block.startTime} – {block.endTime}</Text>
-            <Text style={styles.blockStatus}>
-              {block.isActive ? '🔒 Strict Lock Active' : '⚪ Paused'}
-            </Text>
-          </View>
+        <View style={styles.headerRightActions}>
           <TouchableOpacity
-            style={[styles.toggleButton, block.isActive && styles.toggleButtonActive]}
-            onPress={() => toggleBlock(block.id)}
+            style={styles.passBtn}
+            onPress={() => {
+              HapticService.selection();
+              onNavigate?.('PaywallScreen');
+            }}
+            activeOpacity={0.8}
           >
-            <Text style={styles.toggleText}>{block.isActive ? 'ARMED' : 'ARM'}</Text>
+            <Text style={styles.passBtnText}>👑 Pass</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.customizeBtn}
+            onPress={() => {
+              HapticService.lightImpact();
+              setIsCustomizeOpen(true);
+            }}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.customizeBtnText}>⚙️ Calibrate</Text>
           </TouchableOpacity>
         </View>
-      ))}
+      </View>
 
-      {/* Evening Review Link */}
-      <TouchableOpacity
-        style={styles.reviewBanner}
-        onPress={() => onNavigate?.('EveningReview')}
-        activeOpacity={0.8}
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#FFB800" />
+        }
       >
-        <Text style={styles.reviewBannerText}>🌙 Complete Evening Review & Lock Tomorrow</Text>
-      </TouchableOpacity>
-    </ScrollView>
+        {/* Real-time Status Bar */}
+        <View style={styles.statusBar}>
+          <View style={styles.statusLeft}>
+            <View style={styles.pulseDot} />
+            <Text style={styles.timeLabel}>LIVE CLOCK: {currentTimeStr}</Text>
+          </View>
+          <View style={styles.ambientPill}>
+            <Text style={styles.ambientText}>{activeMonks.toLocaleString()} Monks Locked In</Text>
+          </View>
+        </View>
+
+        {/* Modern Monk Manifesto Card */}
+        <TouchableOpacity
+          style={styles.manifestoCard}
+          onPress={() => {
+            HapticService.lightImpact();
+            setIsCustomizeOpen(true);
+          }}
+          activeOpacity={0.85}
+        >
+          <View style={styles.manifestoTop}>
+            <Text style={styles.manifestoIcon}>{activeArchMeta.icon}</Text>
+            <View style={{ flex: 1 }}>
+              <View style={styles.archetypeBadge}>
+                <Text style={styles.archetypeBadgeText}>ACTIVE PATH: {activeArchMeta.name.toUpperCase()}</Text>
+              </View>
+              <Text style={styles.manifestoQuote}>
+                “Ancient monks left the world behind. We are the modern monks—living in the world, mastering the world, staying anchored in presence.”
+              </Text>
+            </View>
+          </View>
+          <Text style={styles.manifestoHint}>Tap to switch life archetype (Student, Builder, Parent, Householder) →</Text>
+        </TouchableOpacity>
+
+        {activeItem && (
+          <View style={styles.activeBanner}>
+            <Text style={styles.activeBannerTag}>NOW ACTIVE</Text>
+            <Text style={styles.activeBannerTitle}>{activeItem.title}</Text>
+            <TouchableOpacity
+              style={styles.activeBannerBtn}
+              onPress={() => handleAction(activeItem)}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.activeBannerBtnText}>ENTER ACTIVE PHASE →</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Sacred Naam Japa Anchor Banner */}
+        <TouchableOpacity
+          style={styles.naamJapaCard}
+          onPress={() => {
+            HapticService.naamJapaPulse();
+            setIsNaamJapaOpen(true);
+          }}
+          activeOpacity={0.85}
+        >
+          <View style={styles.naamJapaHeader}>
+            <View style={styles.naamJapaLeft}>
+              <Text style={styles.naamJapaTag}>नाम जप • SACRED NAAM ANCHOR</Text>
+              <Text style={styles.naamJapaTitle}>✨ {naamText}</Text>
+            </View>
+            <View style={styles.vibeIconBubble}>
+              <Text style={styles.vibeIcon}>📳</Text>
+            </View>
+          </View>
+          <Text style={styles.naamJapaSub}>
+            Feel the heartbeat vibration • Tap to drown back into the Naam
+          </Text>
+        </TouchableOpacity>
+
+        {/* Timeline Progression Arc */}
+        <View style={styles.timelineContainer}>
+          {/* Continuous Vertical Track */}
+          <View style={styles.timelineTrack} />
+
+          {items
+            .filter((item) => item.enabled)
+            .map((item, index) => {
+              const isCurrent = activeItem?.id === item.id;
+              const isMonkPath = item.isHybridMonkPath;
+
+              return (
+                <View key={item.id} style={styles.timelineRow}>
+                  {/* Timeline Node */}
+                  <View style={[styles.node, isCurrent && styles.nodeActive, isMonkPath && styles.nodeMonk]}>
+                    <Text style={styles.nodeIcon}>
+                      {item.type === 'alarm'
+                        ? '🔥'
+                        : item.type === 'protection'
+                        ? '🛡️'
+                        : item.practiceType === 'osho_stop'
+                        ? '🛑'
+                        : item.type === 'practice'
+                        ? '⚡'
+                        : '🌙'}
+                    </Text>
+                  </View>
+
+                  {/* Timeline Card */}
+                  <View
+                    style={[
+                      styles.card,
+                      isCurrent && styles.cardActive,
+                      isMonkPath && styles.cardMonk,
+                    ]}
+                  >
+                    {/* Card Header */}
+                    <View style={styles.cardHeader}>
+                      <View style={styles.tagWrapper}>
+                        <Text
+                          style={[
+                            styles.cardTag,
+                            isMonkPath && { color: '#FFB800' },
+                            item.type === 'protection' && { color: '#6C63FF' },
+                          ]}
+                        >
+                          {item.tag}
+                        </Text>
+                        <Text style={styles.cardTime}>{item.timeDisplay}</Text>
+                      </View>
+
+                      {/* Notification Bell */}
+                      <TouchableOpacity
+                        onPress={() => handleToggleBell(item.id)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <Text style={[styles.bellIcon, !item.notificationEnabled && styles.bellMuted]}>
+                          {item.notificationEnabled ? '🔔' : '🔕'}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+
+                    {/* Card Title & Subtitle */}
+                    <Text style={styles.cardTitle}>{item.title}</Text>
+                    <Text style={styles.cardSubtitle}>{item.subtitle}</Text>
+
+                    {/* Primary Direct Action */}
+                    <TouchableOpacity
+                      style={[
+                        styles.ctaBtn,
+                        item.type === 'alarm' && styles.ctaAlarm,
+                        item.type === 'protection' && styles.ctaProtection,
+                        isMonkPath && styles.ctaMonk,
+                      ]}
+                      onPress={() => handleAction(item)}
+                      activeOpacity={0.85}
+                    >
+                      <Text
+                        style={[
+                          styles.ctaBtnText,
+                          isMonkPath && { color: '#000' },
+                          item.type === 'alarm' && { color: '#FFF' },
+                        ]}
+                      >
+                        {item.type === 'alarm'
+                          ? 'TEST WAKE MISSION 🔥'
+                          : item.type === 'protection'
+                          ? 'ENTER MONK SHIELD 🛡️'
+                          : item.practiceType === 'osho_stop'
+                          ? 'TRIGGER OSHO STOP 🛑'
+                          : item.type === 'practice'
+                          ? 'IGNITE BREATH ⚡'
+                          : 'COMPLETE REVIEW 🌙'}
+                      </Text>
+                    </TouchableOpacity>
+
+                    {item.type === 'protection' && (
+                      <TouchableOpacity
+                        style={styles.wrapperTriggerBtn}
+                        onPress={() => {
+                          HapticService.lightImpact();
+                          setIsWrapperModalOpen(true);
+                        }}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={styles.wrapperTriggerText}>
+                          📱 Wrap iPhone Instagram Blocker →
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </View>
+              );
+            })}
+        </View>
+      </ScrollView>
+
+      {/* Routine Customization Modal */}
+      <CustomizeRoutineModal
+        visible={isCustomizeOpen}
+        onClose={() => setIsCustomizeOpen(false)}
+        onSaved={loadData}
+      />
+
+      {/* Sacred Naam Japa Sanctuary Modal */}
+      <NaamJapaModal
+        visible={isNaamJapaOpen}
+        onClose={() => setIsNaamJapaOpen(false)}
+        onUpdated={loadData}
+      />
+
+      {/* iOS Instagram Blocker Wrapper Modal */}
+      <InstagramWrapperModal
+        visible={isWrapperModalOpen}
+        onClose={() => setIsWrapperModalOpen(false)}
+        onTestIntercept={() => onNavigate?.('InstagramShieldIntercept')}
+      />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.BACKGROUND,
-  },
-  content: {
-    padding: 20,
-    paddingBottom: 40,
+    backgroundColor: '#0A0A0A',
   },
   header: {
-    marginBottom: 24,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1A1A1A',
+    backgroundColor: '#0A0A0A',
   },
   eyebrow: {
     ...TYPOGRAPHY.caption,
-    color: COLORS.ROUTINE_RED,
+    color: '#FFB800',
     letterSpacing: 2,
-    marginBottom: 4,
+    fontSize: 10,
+    fontWeight: '800',
   },
   title: {
-    ...TYPOGRAPHY.h1,
-    color: COLORS.TEXT_PRIMARY,
+    ...TYPOGRAPHY.h2,
+    color: '#FFF',
+    letterSpacing: 1,
+    fontSize: 22,
   },
-  ambientPill: {
+  headerRightActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(57, 217, 138, 0.1)',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 16,
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(57, 217, 138, 0.3)',
+    gap: 8,
   },
-  greenPulse: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: COLORS.SUCCESS,
+  passBtn: {
+    backgroundColor: 'rgba(255, 184, 0, 0.15)',
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#FFB800',
+  },
+  passBtnText: {
+    ...TYPOGRAPHY.caption,
+    color: '#FFB800',
+    fontWeight: '800',
+    fontSize: 11,
+  },
+  customizeBtn: {
+    backgroundColor: '#181818',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#2A2A2A',
+  },
+  customizeBtnText: {
+    ...TYPOGRAPHY.caption,
+    color: '#EDEDED',
+    fontWeight: '700',
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 60,
+  },
+  statusBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  statusLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  pulseDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: '#39D98A',
     marginRight: 6,
+  },
+  timeLabel: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.TEXT_MUTED,
+    fontWeight: '700',
+    fontSize: 11,
+  },
+  ambientPill: {
+    backgroundColor: 'rgba(57, 217, 138, 0.08)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(57, 217, 138, 0.2)',
   },
   ambientText: {
     ...TYPOGRAPHY.caption,
-    color: COLORS.SUCCESS,
+    color: '#39D98A',
+    fontSize: 10,
     fontWeight: '600',
   },
-  alarmCard: {
-    backgroundColor: COLORS.CARD,
+  manifestoCard: {
+    backgroundColor: '#121212',
     borderRadius: 16,
-    padding: 20,
+    padding: 16,
     borderWidth: 1,
-    borderColor: COLORS.ROUTINE_RED,
-    marginBottom: 16,
+    borderColor: '#262626',
+    marginBottom: 20,
   },
-  alarmHeader: {
+  manifestoTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    marginBottom: 8,
+  },
+  manifestoIcon: {
+    fontSize: 28,
+  },
+  archetypeBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255, 184, 0, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 184, 0, 0.3)',
+    marginBottom: 6,
+  },
+  archetypeBadgeText: {
+    ...TYPOGRAPHY.caption,
+    color: '#FFB800',
+    fontWeight: '800',
+    fontSize: 9,
+    letterSpacing: 1.2,
+  },
+  manifestoQuote: {
+    ...TYPOGRAPHY.caption,
+    color: '#D4D4D4',
+    fontStyle: 'italic',
+    lineHeight: 17,
+    fontSize: 12,
+  },
+  manifestoHint: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.TEXT_MUTED,
+    fontSize: 10,
+    marginTop: 4,
+    textAlign: 'right',
+  },
+  activeBanner: {
+    backgroundColor: '#17140B',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#FFB800',
+    marginBottom: 20,
+  },
+  activeBannerTag: {
+    ...TYPOGRAPHY.caption,
+    color: '#FFB800',
+    fontWeight: '800',
+    letterSpacing: 2,
+    fontSize: 10,
+    marginBottom: 4,
+  },
+  activeBannerTitle: {
+    ...TYPOGRAPHY.body,
+    fontWeight: '800',
+    color: '#FFF',
+    fontSize: 16,
+    marginBottom: 12,
+  },
+  activeBannerBtn: {
+    backgroundColor: '#FFB800',
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  activeBannerBtnText: {
+    color: '#000',
+    fontWeight: '800',
+    fontSize: 13,
+    letterSpacing: 1,
+  },
+  naamJapaCard: {
+    backgroundColor: '#121212',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1.5,
+    borderColor: '#FFB800',
+    marginBottom: 20,
+    shadowColor: '#FFB800',
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  naamJapaHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 6,
   },
-  cardTag: {
+  naamJapaLeft: {
+    flex: 1,
+  },
+  naamJapaTag: {
     ...TYPOGRAPHY.caption,
-    color: COLORS.TEXT_MUTED,
+    color: '#FFB800',
+    fontWeight: '800',
+    fontSize: 9,
+    letterSpacing: 1.5,
+    marginBottom: 2,
+  },
+  naamJapaTitle: {
+    ...TYPOGRAPHY.body,
+    fontWeight: '800',
+    color: '#FFF',
+    fontSize: 16,
     letterSpacing: 1.5,
   },
-  alarmTime: {
-    ...TYPOGRAPHY.h2,
-    color: COLORS.ROUTINE_RED,
+  naamJapaSub: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.TEXT_MUTED,
+    fontSize: 11,
+    lineHeight: 15,
   },
-  alarmSub: {
-    ...TYPOGRAPHY.body,
-    color: COLORS.TEXT_SECONDARY,
-    marginBottom: 16,
-  },
-  actionButton: {
-    backgroundColor: COLORS.ROUTINE_RED,
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  actionButtonText: {
-    ...TYPOGRAPHY.bodyBold,
-    color: COLORS.TEXT_PRIMARY,
-    letterSpacing: 1,
-  },
-  focusCard: {
-    backgroundColor: COLORS.CARD,
-    borderRadius: 16,
-    padding: 20,
+  vibeIconBubble: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(255, 184, 0, 0.12)',
     borderWidth: 1,
-    borderColor: COLORS.PRIMARY,
-    marginBottom: 24,
+    borderColor: 'rgba(255, 184, 0, 0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  focusTitle: {
-    ...TYPOGRAPHY.h3,
-    color: COLORS.PRIMARY,
-    marginVertical: 8,
+  vibeIcon: {
+    fontSize: 18,
   },
-  secondaryButton: {
-    backgroundColor: COLORS.PRIMARY,
+  timelineContainer: {
+    position: 'relative',
+    paddingLeft: 24,
+  },
+  timelineTrack: {
+    position: 'absolute',
+    left: 11,
+    top: 15,
+    bottom: 20,
+    width: 2,
+    backgroundColor: '#202020',
+  },
+  timelineRow: {
+    flexDirection: 'row',
+    marginBottom: 20,
+    position: 'relative',
+  },
+  node: {
+    position: 'absolute',
+    left: -24,
+    top: 12,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#161616',
+    borderWidth: 1.5,
+    borderColor: '#333',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 2,
+  },
+  nodeActive: {
+    borderColor: '#FFB800',
+    backgroundColor: 'rgba(255, 184, 0, 0.2)',
+    shadowColor: '#FFB800',
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  nodeMonk: {
+    borderColor: '#FFB800',
+  },
+  nodeIcon: {
+    fontSize: 10,
+  },
+  card: {
+    flex: 1,
+    backgroundColor: '#131313',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#222',
+  },
+  cardActive: {
+    borderColor: '#FFB800',
+    backgroundColor: '#16140E',
+  },
+  cardMonk: {
+    borderLeftWidth: 3,
+    borderLeftColor: '#FFB800',
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  tagWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  cardTag: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.ROUTINE_RED,
+    fontWeight: '800',
+    fontSize: 9,
+    letterSpacing: 1.5,
+  },
+  cardTime: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.TEXT_MUTED,
+    fontSize: 11,
+    fontVariant: ['tabular-nums'],
+  },
+  bellIcon: {
+    fontSize: 14,
+  },
+  bellMuted: {
+    opacity: 0.35,
+  },
+  cardTitle: {
+    ...TYPOGRAPHY.body,
+    fontWeight: '700',
+    color: '#FFF',
+    fontSize: 15,
+    marginBottom: 4,
+  },
+  cardSubtitle: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.TEXT_MUTED,
+    fontSize: 12,
+    lineHeight: 16,
+    marginBottom: 14,
+  },
+  ctaBtn: {
     paddingVertical: 12,
     borderRadius: 10,
     alignItems: 'center',
+    backgroundColor: '#202020',
   },
-  secondaryButtonText: {
-    ...TYPOGRAPHY.bodyBold,
-    color: COLORS.BACKGROUND,
-    letterSpacing: 0.5,
+  ctaAlarm: {
+    backgroundColor: '#E84545',
   },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
+  ctaProtection: {
+    backgroundColor: '#4A42C9',
   },
-  sectionHeader: {
-    ...TYPOGRAPHY.caption,
-    color: COLORS.TEXT_MUTED,
-    letterSpacing: 1.5,
+  ctaMonk: {
+    backgroundColor: '#FFB800',
   },
-  linkText: {
-    ...TYPOGRAPHY.caption,
-    color: COLORS.PRIMARY,
+  ctaBtnText: {
+    fontWeight: '800',
+    fontSize: 12,
+    letterSpacing: 1,
+    color: '#FFF',
   },
-  blockCard: {
-    backgroundColor: COLORS.CARD,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.BORDER_SUBTLE,
-  },
-  blockCardActive: {
-    borderColor: COLORS.PRIMARY,
-  },
-  blockInfo: {
-    flex: 1,
-  },
-  blockName: {
-    ...TYPOGRAPHY.bodyBold,
-    color: COLORS.TEXT_PRIMARY,
-    marginBottom: 2,
-  },
-  blockTime: {
-    ...TYPOGRAPHY.caption,
-    color: COLORS.TEXT_MUTED,
-    marginBottom: 2,
-  },
-  blockStatus: {
-    ...TYPOGRAPHY.caption,
-    color: COLORS.PRIMARY,
-  },
-  toggleButton: {
-    paddingHorizontal: 14,
+  wrapperTriggerBtn: {
+    marginTop: 8,
     paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: COLORS.BORDER_SUBTLE,
-  },
-  toggleButtonActive: {
-    backgroundColor: COLORS.PRIMARY,
-    borderColor: COLORS.PRIMARY,
-  },
-  toggleText: {
-    ...TYPOGRAPHY.caption,
-    fontWeight: '700',
-    color: COLORS.TEXT_PRIMARY,
-  },
-  reviewBanner: {
-    backgroundColor: COLORS.CARD,
-    padding: 16,
-    borderRadius: 12,
     alignItems: 'center',
-    marginTop: 10,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 184, 0, 0.08)',
     borderWidth: 1,
-    borderColor: COLORS.BORDER_SUBTLE,
+    borderColor: 'rgba(255, 184, 0, 0.25)',
   },
-  reviewBannerText: {
-    ...TYPOGRAPHY.body,
-    color: COLORS.TEXT_SECONDARY,
+  wrapperTriggerText: {
+    ...TYPOGRAPHY.caption,
+    color: '#FFB800',
+    fontWeight: '700',
+    fontSize: 11,
   },
 });

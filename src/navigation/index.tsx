@@ -1,5 +1,14 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, StatusBar } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  SafeAreaView,
+  StatusBar,
+  ActivityIndicator,
+  Linking,
+} from 'react-native';
 import { COLORS } from '../theme/colors';
 import { TYPOGRAPHY } from '../theme/typography';
 import { RoutineHome } from '../screens/routine/RoutineHome';
@@ -16,20 +25,50 @@ import { ManovigyanHome } from '../screens/manovigyan/ManovigyanHome';
 import { InquirySession } from '../screens/manovigyan/InquirySession';
 import { SelfMirrorReport } from '../screens/manovigyan/SelfMirrorReport';
 import { SovereignCockpit } from '../screens/dashboard/SovereignCockpit';
+import { HybridPracticeZap } from '../screens/routine/HybridPracticeZap';
+import { InstagramShieldIntercept } from '../screens/routine/InstagramShieldIntercept';
+import { PaywallScreen } from '../screens/subscription/PaywallScreen';
+import { OnboardingScreen, hasCompletedOnboarding } from '../screens/onboarding/OnboardingScreen';
 import { SpineSection as SpineSectionType, InquiryCategory } from '../types';
+import { HapticService } from '../services/haptics';
 
-export type MainTab = 'COCKPIT' | 'ROUTINE' | 'SADHNA' | 'MANOVIGYAN';
+export type MainTab = 'ROUTINE' | 'COCKPIT';
 
 export const RootNavigator = () => {
-  const [activeTab, setActiveTab] = useState<MainTab>('COCKPIT');
+  const [isOnboarded, setIsOnboarded] = useState<boolean | null>(null);
+  const [activeTab, setActiveTab] = useState<MainTab>('ROUTINE');
   const [currentSubScreen, setCurrentSubScreen] = useState<string | null>(null);
   const [selectedSection, setSelectedSection] = useState<SpineSectionType | null>(null);
   const [breathingSectionId, setBreathingSectionId] = useState<number>(1);
   const [inquiryCategory, setInquiryCategory] = useState<InquiryCategory | undefined>(undefined);
   const [inquiryDilemmaId, setInquiryDilemmaId] = useState<string | undefined>(undefined);
+  const [practiceType, setPracticeType] = useState<'kundalini_breath' | 'osho_stop' | 'evening_witness'>('kundalini_breath');
+
+  useEffect(() => {
+    hasCompletedOnboarding().then((done) => setIsOnboarded(done));
+
+    // Handle deep link wrappers like hybridmonk://shield or hybridmonk://instagram
+    const handleDeepLink = (event: { url: string }) => {
+      const url = event.url;
+      if (url.includes('shield') || url.includes('instagram') || url.includes('intercept')) {
+        HapticService.naamJapaPulse();
+        setActiveTab('ROUTINE');
+        setCurrentSubScreen('InstagramShieldIntercept');
+      }
+    };
+
+    Linking.getInitialURL().then((url) => {
+      if (url) handleDeepLink({ url });
+    });
+
+    const sub = Linking.addEventListener('url', handleDeepLink);
+    return () => sub.remove();
+  }, []);
 
   const handleCockpitNavigate = (tab: string, screen?: string, params?: any) => {
-    setActiveTab(tab as MainTab);
+    if (tab === 'ROUTINE' || tab === 'COCKPIT') {
+      setActiveTab(tab as MainTab);
+    }
     if (screen) {
       if (params?.sectionId) {
         setBreathingSectionId(params.sectionId);
@@ -40,13 +79,19 @@ export const RootNavigator = () => {
       if (params?.dilemmaId) {
         setInquiryDilemmaId(params.dilemmaId);
       }
+      if (params?.practiceType) {
+        setPracticeType(params.practiceType);
+      }
       setCurrentSubScreen(screen);
     } else {
       setCurrentSubScreen(null);
     }
   };
 
-  const handleNavigateRoutine = (screen: string) => {
+  const handleNavigateRoutine = (screen: string, params?: any) => {
+    if (params?.practiceType) {
+      setPracticeType(params.practiceType);
+    }
     setCurrentSubScreen(screen);
   };
 
@@ -88,6 +133,15 @@ export const RootNavigator = () => {
     }
     if (currentSubScreen === 'EveningReview') {
       return <EveningReview onBack={handleBack} />;
+    }
+    if (currentSubScreen === 'InstagramShieldIntercept') {
+      return <InstagramShieldIntercept onBack={handleBack} />;
+    }
+    if (currentSubScreen === 'PaywallScreen') {
+      return <PaywallScreen onBack={handleBack} />;
+    }
+    if (currentSubScreen === 'HybridPracticeZap') {
+      return <HybridPracticeZap practiceType={practiceType} onBack={handleBack} />;
     }
     if (currentSubScreen === 'SpineJourney') {
       return (
@@ -148,81 +202,67 @@ export const RootNavigator = () => {
     return <ManovigyanHome onNavigate={handleNavigateManovigyan} />;
   };
 
+  if (isOnboarded === null) {
+    return (
+      <SafeAreaView style={[styles.safeArea, { justifyContent: 'center', alignItems: 'center' }]}>
+        <StatusBar barStyle="light-content" />
+        <ActivityIndicator size="small" color={COLORS.PRIMARY} />
+      </SafeAreaView>
+    );
+  }
+
+  if (isOnboarded === false) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar barStyle="light-content" />
+        <OnboardingScreen onComplete={() => setIsOnboarded(true)} />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" />
       <View style={styles.container}>{renderContent()}</View>
 
-      {/* Main 4-Tab Switcher */}
+      {/* Streamlined Sovereign Switcher: Dincharya (The Day Arc) & Cockpit (Progress & Sync) */}
       {!currentSubScreen && (
         <View style={styles.tabBar}>
           <TouchableOpacity
-            style={[styles.tabButton, activeTab === 'COCKPIT' && styles.tabButtonActiveCockpit]}
-            onPress={() => setActiveTab('COCKPIT')}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.tabIcon}>🔆</Text>
-            <Text
-              style={[
-                styles.tabLabel,
-                activeTab === 'COCKPIT' && { color: COLORS.PRIMARY, fontWeight: '700' },
-              ]}
-            >
-              COCKPIT
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
             style={[styles.tabButton, activeTab === 'ROUTINE' && styles.tabButtonActiveRoutine]}
-            onPress={() => setActiveTab('ROUTINE')}
+            onPress={() => {
+              HapticService.selection();
+              setActiveTab('ROUTINE');
+            }}
             activeOpacity={0.8}
           >
             <Text style={styles.tabIcon}>🔥</Text>
             <Text
               style={[
                 styles.tabLabel,
-                activeTab === 'ROUTINE' && { color: COLORS.ROUTINE_RED, fontWeight: '700' },
+                activeTab === 'ROUTINE' && { color: '#FFB800', fontWeight: '800' },
               ]}
             >
-              ROUTINE
+              DINCHARYA
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.tabButton, activeTab === 'SADHNA' && styles.tabButtonActiveSadhna]}
-            onPress={() => setActiveTab('SADHNA')}
+            style={[styles.tabButton, activeTab === 'COCKPIT' && styles.tabButtonActiveCockpit]}
+            onPress={() => {
+              HapticService.selection();
+              setActiveTab('COCKPIT');
+            }}
             activeOpacity={0.8}
           >
-            <Text style={styles.tabIcon}>🪷</Text>
+            <Text style={styles.tabIcon}>🔆</Text>
             <Text
               style={[
                 styles.tabLabel,
-                activeTab === 'SADHNA' && { color: COLORS.SADHNA_VIOLET, fontWeight: '700' },
+                activeTab === 'COCKPIT' && { color: COLORS.PRIMARY, fontWeight: '800' },
               ]}
             >
-              SADHNA
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.tabButton,
-              activeTab === 'MANOVIGYAN' && styles.tabButtonActiveManovigyan,
-            ]}
-            onPress={() => setActiveTab('MANOVIGYAN')}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.tabIcon}>👁️</Text>
-            <Text
-              style={[
-                styles.tabLabel,
-                activeTab === 'MANOVIGYAN' && {
-                  color: COLORS.MANOVIGYAN_CYAN,
-                  fontWeight: '700',
-                },
-              ]}
-            >
-              MANOVI.
+              COCKPIT
             </Text>
           </TouchableOpacity>
         </View>

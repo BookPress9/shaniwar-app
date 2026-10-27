@@ -4,6 +4,7 @@ import { COLORS } from '../../theme/colors';
 import { TYPOGRAPHY } from '../../theme/typography';
 import { spineJourney } from '../../features/spine/SpineJourney';
 import { SpineSection } from '../../types';
+import { HapticService } from '../../services/haptics';
 
 export const SpineJourney = ({
   onBack,
@@ -76,7 +77,14 @@ export const SpineJourney = ({
                   !sec.isUnlocked && styles.nodeLocked,
                   isGatekeeper && styles.nodeGatekeeper,
                 ]}
-                onPress={() => onSelectSection?.(sec)}
+                onPress={() => {
+                  if (sec.isUnlocked) {
+                    HapticService.selection();
+                    onSelectSection?.(sec);
+                  } else {
+                    HapticService.warningNotification();
+                  }
+                }}
                 activeOpacity={sec.isUnlocked ? 0.7 : 1}
               >
                 <Text style={styles.nodeIcon}>
@@ -86,6 +94,11 @@ export const SpineJourney = ({
               </TouchableOpacity>
 
               <View style={styles.nodeTextBubble}>
+                {sec.chakraAnchor && (
+                  <View style={styles.waypointBadge}>
+                    <Text style={styles.waypointText}>✦ {sec.chakraAnchor.toUpperCase()}</Text>
+                  </View>
+                )}
                 <Text
                   style={[
                     styles.nodeName,
@@ -93,6 +106,7 @@ export const SpineJourney = ({
                     !sec.isUnlocked && { color: COLORS.TEXT_MUTED },
                   ]}
                 >
+                  <Text style={styles.regionCodeTag}>[{sec.regionCode}] </Text>
                   {sec.name}
                 </Text>
                 <Text style={styles.nodeSub}>
@@ -100,7 +114,7 @@ export const SpineJourney = ({
                     ? `Mastered · ${sec.accuracyScore || 94}% match`
                     : isCurrent
                     ? 'Active Station · Tap to Initiate'
-                    : `Locked · Requires V${sec.id - 1}`}
+                    : `Locked · Requires ${sec.regionCode}`}
                 </Text>
               </View>
             </View>
@@ -255,5 +269,26 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: COLORS.TEXT_MUTED,
     marginTop: 2,
+  },
+  waypointBadge: {
+    backgroundColor: 'rgba(201, 146, 42, 0.15)',
+    borderWidth: 1,
+    borderColor: COLORS.PRIMARY,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginBottom: 4,
+  },
+  waypointText: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.PRIMARY,
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  regionCodeTag: {
+    color: COLORS.SADHNA_VIOLET,
+    fontWeight: '700',
+    fontSize: 11,
   },
 });

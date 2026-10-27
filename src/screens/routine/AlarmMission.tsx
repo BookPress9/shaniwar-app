@@ -1,31 +1,94 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { COLORS } from '../../theme/colors';
 import { TYPOGRAPHY } from '../../theme/typography';
 import { MissionType } from '../../types';
 import { missionRunner } from '../../features/alarm/MissionRunner';
+import { dbService } from '../../services/db';
+import { HapticService } from '../../services/haptics';
+import { motionSensorService } from '../../services/motionSensor';
 
 export const AlarmMission = ({ onBack }: { onBack?: () => void }) => {
-  const [selectedType, setSelectedType] = useState<MissionType>('shake');
+  const [selectedType, setSelectedType] = useState<MissionType>('walk');
   const [currentCount, setCurrentCount] = useState(0);
-  const targetCount = selectedType === 'shake' ? 25 : selectedType === 'walk' ? 20 : 1;
+  const targetCount = selectedType === 'shake' ? 25 : selectedType === 'walk' ? 20 : 10;
   const [isDone, setIsDone] = useState(false);
+  const [dynamicAccel, setDynamicAccel] = useState<number>(0);
+  const [isHardwareActive, setIsHardwareActive] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    if (!isDone && (selectedType === 'walk' || selectedType === 'shake')) {
+      motionSensorService
+        .startListening(60, (progress) => {
+          if (!active) return;
+          setCurrentCount(progress.currentCount);
+          HapticService.lightImpact();
+          if (progress.isVerified) {
+            completeMission();
+          }
+        })
+        .then((started) => {
+          if (active) setIsHardwareActive(started);
+        });
+    }
+
+    return () => {
+      active = false;
+      motionSensorService.stopListening();
+    };
+  }, [selectedType, isDone]);
 
   const startMission = (type: MissionType) => {
     setSelectedType(type);
     setCurrentCount(0);
     setIsDone(false);
+    setDynamicAccel(0);
     missionRunner.startMission(type, targetCount);
   };
 
   const handleSimulateAction = () => {
     if (isDone) return;
-    const nextCount = currentCount + 1;
-    setCurrentCount(nextCount);
-    const progress = missionRunner.recordIncrement();
-    if (nextCount >= targetCount || progress.isVerified) {
-      setIsDone(true);
+
+    if (selectedType === 'walk' || selectedType === 'shake') {
+      // Simulate real gait accelerometry spike: dynamic force ~ 3.1 m/s²
+      const syntheticAccel = 2.8 + Math.random() * 1.2;
+      setDynamicAccel(Math.round(syntheticAccel * 10) / 10);
+      const progress = missionRunner.processMotionSample(0, syntheticAccel + 9.81, 0);
+      setCurrentCount(progress.currentCount);
+      HapticService.lightImpact();
+      if (progress.isVerified) {
+        completeMission();
+      }
+    } else if (selectedType === 'photo') {
+      const progress = missionRunner.recordPhotoCapture();
+      HapticService.mediumImpact();
+      if (progress.isVerified) {
+        completeMission();
+      }
+    } else {
+      const progress = missionRunner.recordIncrement();
+      setCurrentCount(progress.currentCount);
+      HapticService.lightImpact();
+      if (progress.isVerified) {
+        completeMission();
+      }
     }
+  };
+
+  const completeMission = () => {
+    setIsDone(true);
+    HapticService.heavyImpact();
+    setTimeout(() => {
+      HapticService.successNotification();
+    }, 150);
+    dbService.getTodayTarget().then((t) => {
+      if (!t.alarmPassed) {
+        t.alarmPassed = true;
+        dbService.saveTodayTarget(t);
+      }
+    });
   };
 
   return (
@@ -72,9 +135,15 @@ export const AlarmMission = ({ onBack }: { onBack?: () => void }) => {
               : selectedType === 'walk'
               ? 'Steps Taken'
               : selectedType === 'photo'
-              ? 'Match Household Anchor'
+              ? 'Walk 10 Steps + Frame Capture'
               : 'Scan Bathroom QR'}
           </Text>
+          {dynamicAccel > 0 && (
+            <Text style={styles.accelText}>⚡ {dynamicAccel} m/s² gait impulse</Text>
+          )}
+          {isHardwareActive && (
+            <Text style={styles.hardwareBadge}>🟢 CoreMotion Sensor Live</Text>
+          )}
         </View>
       </View>
 
@@ -194,6 +263,21 @@ const styles = StyleSheet.create({
     ...TYPOGRAPHY.caption,
     color: COLORS.TEXT_MUTED,
     marginTop: 8,
+    textAlign: 'center',
+  },
+  accelText: {
+    ...TYPOGRAPHY.mono,
+    color: COLORS.PRIMARY,
+    fontSize: 11,
+    marginTop: 6,
+    textAlign: 'center',
+  },
+  hardwareBadge: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.SUCCESS,
+    fontSize: 10,
+    marginTop: 4,
+    fontWeight: '700',
     textAlign: 'center',
   },
   triggerButton: {

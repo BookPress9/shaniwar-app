@@ -30,13 +30,28 @@ export interface SessionResult {
 }
 
 export type SpineChapter = 'root' | 'channel' | 'crown';
+export type SpineRegion = 'COCCYGEAL' | 'SACRAL' | 'LUMBAR' | 'THORACIC' | 'CERVICAL';
+
+export interface VBTTechnique {
+  id: string;
+  title: string;
+  verse: string;
+  essence: string;
+  duration: string;
+  script: string;
+  source: string;
+}
 
 export interface SpineSection {
   id: number; // 1 to 33
   name: string;
   chapter: SpineChapter;
+  region: SpineRegion;
+  regionCode: string; // Co1..Co4, S1..S5, L1..L5, T1..T12, C1..C7
+  chakraAnchor?: string; // e.g. "Mūlādhāra (Base)", "Anāhata (Heart)"
   description: string;
   breathPatternId: string;
+  vbtTechniqueId?: string;
   attentionExercise: string;
   isUnlocked: boolean;
   accuracyScore?: number;
@@ -103,4 +118,38 @@ export interface DeconstructionItem {
   description: string;
   origin: string; // e.g. "Childhood adaptation", "Innate temperament"
 }
+
+// ==========================================
+// SUBSCRIPTION & BILLING (Single, Duo, Family)
+// ==========================================
+
+export type SubscriptionTier = 'free' | 'single' | 'duo' | 'family';
+export type BillingPeriod = 'monthly' | 'annual';
+
+export interface SubscriptionPlan {
+  id: string;
+  tier: SubscriptionTier;
+  name: string;
+  tagline: string;
+  description: string;
+  icon: string;
+  maxMembers: number;
+  monthlyPriceUSD: number;
+  annualPriceUSD: number;
+  badge?: string;
+  targetAudience: string;
+  features: string[];
+}
+
+export interface UserSubscriptionState {
+  tier: SubscriptionTier;
+  period: BillingPeriod;
+  isActive: boolean;
+  isTrial: boolean;
+  trialEndTimestamp?: number;
+  expiresAtTimestamp?: number;
+  memberSlots: number;
+  inviteCode?: string;
+}
+
 

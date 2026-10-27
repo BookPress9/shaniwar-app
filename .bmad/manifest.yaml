@@ -1,0 +1,24 @@
+name: hybrid-monk-bmad
+version: 1.1.0
+description: Breakthrough Method for Agile AI-Driven Development (BMad) for Hybrid Monk
+target_project: Hybrid Monk (React Native / Expo + iOS + Supabase)
+current_phase: ios_native_parity
+active_sprint: Sprint-2-iOS-Native-Parity
+
+roles:
+  orchestrator: .bmad/agents/orchestrator.md
+  pm: .bmad/agents/pm.md
+  architect: .bmad/agents/architect.md
+  dev: .bmad/agents/dev.md
+  qa: .bmad/agents/qa.md
+  sm: .bmad/agents/sm.md
+
+artifacts:
+  prd: .bmad/workflows/prd-hybrid-monk.md
+  architecture: .bmad/workflows/architecture.md
+  ios_architecture: .bmad/workflows/ios-architecture.md
+  sprint_status: .bmad/workflows/sprint-status.yaml
+
+testing:
+  e2e_driver: playwright
+  onboarding_suite: e2e/onboarding.spec.ts

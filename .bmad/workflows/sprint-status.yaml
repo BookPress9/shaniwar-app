@@ -1,0 +1,65 @@
+sprint:
+  id: "Sprint-2-iOS-Native-Parity"
+  goal: "Harden iOS native capabilities (CoreMotion, Apple Haptics, Screen Time architecture, Info.plist permissions)"
+  status: "ACTIVE"
+
+previous_sprints:
+  - id: "Sprint-1-Production-Foundation"
+    status: "COMPLETED"
+
+epics:
+  - id: EPIC-IOS-1
+    title: "iOS Native Configuration & Permissions"
+    status: "DONE"
+    stories:
+      - id: HM-IOS-101
+        title: "Configure app.json with iOS Bundle ID, NSCameraUsageDescription, NSMotionUsageDescription, and UIBackgroundModes"
+        status: "DONE"
+        owner: "architect"
+      - id: HM-IOS-102
+        title: "Install and configure expo-sensors & expo-haptics modules"
+        status: "DONE"
+        owner: "dev"
+
+  - id: EPIC-IOS-2
+    title: "iOS Tactile Haptic Engine"
+    status: "DONE"
+    stories:
+      - id: HM-IOS-201
+        title: "Create HapticService supporting UIImpactFeedback (light/medium/heavy) & UINotificationFeedback"
+        status: "DONE"
+        owner: "dev"
+      - id: HM-IOS-202
+        title: "Wire tactile feedback into breath cycle (Inhale/Hold/Exhale) and vertebra unlocks"
+        status: "DONE"
+        owner: "dev"
+      - id: HM-IOS-203
+        title: "Wire tactile micro-ticks into bottom tab navigation and alarm steps"
+        status: "DONE"
+        owner: "dev"
+
+  - id: EPIC-IOS-3
+    title: "iOS CoreMotion Hardware Alarm Gate"
+    status: "DONE"
+    stories:
+      - id: HM-IOS-301
+        title: "Build MotionSensorService binding CMMotionManager stream to GenuineMotionTracker"
+        status: "DONE"
+        owner: "dev"
+      - id: HM-IOS-302
+        title: "Add live CoreMotion sensor indicator and automated listener lifecycle to AlarmMission screen"
+        status: "DONE"
+        owner: "dev"
+
+  - id: EPIC-IOS-4
+    title: "iOS Screen Time & Background Audio Architecture"
+    status: "SPECIFIED"
+    stories:
+      - id: HM-IOS-401
+        title: "Document FamilyControls & ManagedSettings Shield configuration for iOS Focus Blocks"
+        status: "SPECIFIED"
+        owner: "architect"
+      - id: HM-IOS-402
+        title: "Verify static analysis and iOS compilation compatibility (0 TS errors)"
+        status: "DONE"
+        owner: "qa"
