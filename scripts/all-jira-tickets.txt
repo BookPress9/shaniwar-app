@@ -1,0 +1,96 @@
+DEV-1 | Completed | FOCUS-1 A delayed START boundary can begin a 24-hour focus session
+DEV-2 | Completed | FOCUS-5 Window END calls releaseFocus() unconditionally — blocks multiple windows
+DEV-3 | Completed | FOCUS-6 A saved schedule is reported as armed without engine confirmation
+DEV-4 | Completed | FOCUS-4 Scheduled boundaries depend on a nullable in-process session
+DEV-5 | Completed | FOCUS-2 No overnight focus windows — sleep preparation is unreachable
+DEV-6 | Completed | FOCUS-3 All-day preset is 00:00–23:59 and copy implies persistent protection
+DEV-7 | Pending | Run the 8-check physical-device protocol — it has never executed once
+DEV-8 | Open | Rotate the two leaked credentials — both verified still valid
+DEV-9 | Pending | Add a migration runner before the first knowledge table exists
+DEV-10 | Open | Keep essential-access stop, and keep no-snooze on the block screen
+DEV-11 | Work in progress | Routine V3 — build the day plan, alarm, and protection. Sadhana waits.
+DEV-12 | Pending | Align the Steady UI to its wireframe contract — built before the contract was visible
+DEV-13 | Open | Extract UI strings to strings.xml — blocks Hindi and all localisation
+DEV-14 | Open | Add crash reporting — a failed alarm currently leaves no trace anywhere
+DEV-15 | Open | Add CI running backend and Android tests on push — two agents share this repo with no gate
+DEV-16 | Pending | DECISION: Sadhana Phase 2 — gamification and the intensive-practice boundary
+DEV-17 | Open | Add release signing config and resolve api.thehybridmonk.com (currently NXDOMAIN)
+DEV-18 | Pending | Confirm whether GEMINI_API_KEY is set on Render — every AI estimate depends on it
+DEV-19 | Open | Git push cannot complete from a non-interactive session — credential manager needs a GUI dialog
+DEV-20 | Open | DECISION: sprints and Fix Version are unavailable — DEV is a service-desk project
+DEV-21 | Completed | Reboot catch-up resumes local protection with no session — fixed on main
+DEV-22 | Open | Future sign-in options: phone, WhatsApp, SMS, authenticator and iOS app auth
+DEV-23 | Open | Visual system: circles and connecting marks across the app
+DEV-24 | Work in progress | Initiation step 1: onboarding draft persistence, account adapters, guest migration
+DEV-25 | Open | Accounts + cloud sync: real providers, backend /v1, hosting (HIGH priority revisit)
+DEV-26 | Work in progress | Initiation Compose screens from wireframe initiation-v1
+DEV-27 | Work in progress | Sadhana S1: practice domain + research-only lock (decision 0017)
+DEV-28 | Work in progress | Sadhana S2: attempt timing + events (monotonic active seconds, interrupted on process death)
+DEV-29 | Work in progress | Sadhana S3: record, reflection, independent practice, guidance preference, capability evidence
+DEV-30 | Work in progress | Sadhana S4: Living Spine data (3 layers, SourceRecord, centres study-only)
+DEV-31 | Work in progress | Sadhana S5: screens A - home, Living Spine, centre drawer, Path
+DEV-32 | Work in progress | Sadhana S6: screens B - detail, prepare, player, return/reflection
+DEV-33 | Work in progress | Sadhana S7: screens C - Record, Without app, Deep study + research boundary
+DEV-34 | Open | Sadhana S8: content review manifests, /v1 Sadhana API + sync, device/a11y QA (needs founder)
+DEV-35 | Done | Finalization B3–B8: sync outbox, content review gate, Choose↔Routine link, import initiation attempt, edit self-report minutes, a11y tests
+DEV-36 | Open | Sadhana Stage 1 (Spine base): attention practice, ambient frequency, one-tap check-in
+DEV-37 | Open | Spike: Stage 1 ambient frequency — sound sourcing, licensing, no health claims
+DEV-38 | Open | Sync outbox never queues own-practice self-reports, their edits/deletes, the imported onboarding attempt, or routine changes
+DEV-39 | Open | Bundled techniques.json contains timed box-breathing script and a nervous-system claim
+DEV-40 | Open | DECISION: Supabase is the only backend for the phone; retire the Render Node API from the app path
+DEV-41 | Open | Supabase: add a staging project next to shanivar-prototype, and settle plan, backups and access for the live project
+DEV-42 | Open | Schema hygiene + RLS hardening on all sync tables: updated_at/created_at triggers, evidence_type checks, anon revoke, size caps, pgTAP tests
+DEV-43 | Open | Apply Supabase migrations and Edge Functions through CI: staging on merge, prod on founder-approved release
+DEV-44 | Open | Android build flavours (staging/prod) carry Supabase URL and anon key from CI/local properties, never from git
+DEV-45 | Open | Sync engine (Backend half): guest session, sender loop with retries/backoff/connectivity, dead-letter, conflict rules
+DEV-46 | Open | Edge Function delete-account: in-app account and synced-data deletion (plus client-side export)
+DEV-47 | Open | Wire sync into the app (Frontend half): build the client from BuildConfig, guest sign-in at the Initiation guest step, flush triggers, quiet status line
+DEV-48 | Open | Invite-code-gated email signup (Supabase Auth email OTP + server-side invite check)
+DEV-49 | Open | In-app feedback: write-only feedback table + submit_feedback RPC
+DEV-50 | Open | Onboarding/profile table (profiles + onboarding draft) and guidance_preferences
+DEV-51 | Open | Sadhana content tables (practice_definitions, content_review_manifests, source_records) with reviewed seed data + seed.sql
+DEV-52 | Open | Routine schema v2: routine_plans revision/time_zone/practice_local, put_routine RPC with 409 on stale revision, one home for protection windows
+DEV-53 | Open | Device-truth tables: alarm_configs, alarm_observations, device_observations (device stays authority)
+DEV-54 | Open | Sadhana record schema alignment: practice_reflections table, self_reports/practice_attempts columns, orbit_events append-only with checks
+DEV-55 | Open | E2E: phone-to-Supabase round trip against staging (automated nightly + physical-device checklist)
+DEV-56 | Open | EPIC: Epic A — Strategy and measurement
+DEV-57 | Open | EPIC: Epic B — Protection and intentional choice
+DEV-58 | Open | EPIC: Epic C — Routine and action execution
+DEV-59 | Open | EPIC: Epic D — Sadhana and awareness
+DEV-60 | Open | EPIC: Epic E — Security, privacy and reliability
+DEV-61 | Open | EPIC: Epic F — QA and release readiness
+DEV-62 | Open | EPIC: Epic G — Customer Success and growth
+DEV-63 | Open | Publish the canonical Notion page "Shanivar Product Thesis — Protection, Awareness & Flow" with decision log
+DEV-64 | Open | Map existing Shanivar features against the protect → act → reflect journey
+DEV-65 | Open | Define the event dictionary, analytics contract and WIAC (North Star) computation
+DEV-66 | Open | Set baselines, experiment design and an assumption register
+DEV-67 | Open | Audit protection capabilities and Android platform constraints
+DEV-68 | Open | Specify protection-window behaviour and user controls
+DEV-69 | Open | Record the intervention choice on the block overlay (on-device)
+DEV-70 | Open | Detect and surface protection failures (service killed, permission revoked)
+DEV-71 | Open | QA suite: protection permissions, sessions, reboot and recovery on real devices
+DEV-72 | Open | Define routine completion semantics and make completion idempotent
+DEV-73 | Open | First meaningful action flow: new user completes one action without configuring the whole app
+DEV-74 | Open | Missed-step recovery and non-punitive return
+DEV-75 | Open | Verify alarm and notification behaviour on supported real devices
+DEV-76 | Open | Map each initial practice to a user need, expected action and clarity check
+DEV-77 | Open | Optional one-tap awareness prompt after a distraction or completed action
+DEV-78 | Open | Connect relevant Mano Vijnana content to practical exercises
+DEV-79 | Open | Cross-user access test suite for every Supabase table, RPC and Edge Function
+DEV-80 | Open | Sensitive logging, retention, deletion and backup review
+DEV-81 | Open | Release, rollback and incident-response runbook
+DEV-82 | Open | Traceable test plan, AC-to-test matrix and defect register for all epics
+DEV-83 | Open | Verify analytics events match actual user actions
+DEV-84 | Open | End-to-end protect → act → reflect journey and regression suite
+DEV-85 | Open | Activation and retention dashboard with goal segments
+DEV-86 | Open | Feedback and churn-reason taxonomy, interview guide and monthly product review
+DEV-87 | Open | Lapsed-user recovery journey offering smaller commitments
+DEV-88 | Open | Positioning doc and feature-claim verification checklist
+DEV-89 | Open | Safety audit: Breathing* screens and block-screen "breathe" action vs no-breath-pacing rule
+DEV-90 | Open | DEV-42 migration d9168eb cannot be reverted on its own — later commits depend on it
+DEV-91 | Open | Anon request to a sync table returns a 401 error hint naming the table (DEV-42 revoke)
+DEV-92 | Open | Sync tables: free-text columns other than ids and note have no length cap (DEV-42 size caps incomplete)
+DEV-93 | Open | Wake alarm: accessible dismissal is hidden unless pre-selected in settings or the phone has no motion sensor (breaks decision 0003)
+DEV-94 | Open | Alarm card and Routine show "Next: <time>" from stored prefs after Android has dropped the alarm (exact-alarm revoked or re-arm failed)
+DEV-95 | Open | After a reboot, the wake alarm is not re-armed until the phone is first unlocked (no direct-boot support)
+DEV-96 | Open | Alarm notification channel is described as "non-dismissible" and its text tells everyone to walk

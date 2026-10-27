@@ -51,7 +51,7 @@ export const RootNavigator = () => {
     const handleDeepLink = (event: { url: string }) => {
       const url = event.url;
       if (url.includes('shield') || url.includes('instagram') || url.includes('intercept')) {
-        HapticService.naamJapaPulse();
+        HapticService.heavyImpact();
         setActiveTab('ROUTINE');
         setCurrentSubScreen('InstagramShieldIntercept');
       }

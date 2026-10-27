@@ -58,11 +58,10 @@ export const HapticService = {
   },
 
   /**
-   * The Naam Japa Sacred Heartbeat Pulse:
-   * A distinct double-thump (lub-dub) rhythm that snaps the user out of trance,
-   * reminding them why the phone is vibrating so they drown back into their Naam Japa.
+   * Double-thump Presence Pulse:
+   * A distinct double tactile rhythm (heavy + medium) that snaps the user out of distraction.
    */
-  naamJapaPulse: async () => {
+  presencePulse: async () => {
     if (Platform.OS === 'web') return;
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);

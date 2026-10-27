@@ -156,7 +156,7 @@ async function fetchJiraIssues() {
   }
 
   try {
-    const url = `${JIRA_HOST}/rest/api/3/search?jql=project=${JIRA_PROJECT_KEY}&maxResults=100`;
+    const url = `${JIRA_HOST}/rest/api/3/search/jql?jql=project=${JIRA_PROJECT_KEY}&maxResults=100`;
     console.log(`Connecting to ${JIRA_HOST} (Project: ${JIRA_PROJECT_KEY})...`);
     const res = await fetch(url, {
       headers: {

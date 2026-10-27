@@ -15,10 +15,8 @@ import {
   DincharyaArchetype,
   ARCHETYPES,
 } from '../../services/routineService';
-import { naamJapaService } from '../../services/naamJapaService';
 import { HapticService } from '../../services/haptics';
 import { CustomizeRoutineModal } from './CustomizeRoutineModal';
-import { NaamJapaModal } from './NaamJapaModal';
 import { InstagramWrapperModal } from './InstagramWrapperModal';
 
 interface Props {
@@ -29,10 +27,8 @@ export const RoutineHome = ({ onNavigate }: Props) => {
   const [items, setItems] = useState<RoutineTimelineItem[]>([]);
   const [activeItem, setActiveItem] = useState<RoutineTimelineItem | null>(null);
   const [currentArchetype, setCurrentArchetype] = useState<DincharyaArchetype>('builder');
-  const [naamText, setNaamText] = useState<string>('OM NAMAH SHIVAYA');
   const [currentTimeStr, setCurrentTimeStr] = useState<string>('');
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
-  const [isNaamJapaOpen, setIsNaamJapaOpen] = useState(false);
   const [isWrapperModalOpen, setIsWrapperModalOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const activeMonks = 1428;
@@ -59,10 +55,8 @@ export const RoutineHome = ({ onNavigate }: Props) => {
   const loadData = async () => {
     const routine = await routineService.getRoutine();
     const arch = await routineService.getArchetype();
-    const japaCfg = await naamJapaService.getConfig();
     setItems(routine);
     setCurrentArchetype(arch);
-    setNaamText(japaCfg.naam);
     setActiveItem(routineService.getCurrentActiveItem());
   };
 
@@ -184,29 +178,6 @@ export const RoutineHome = ({ onNavigate }: Props) => {
             </TouchableOpacity>
           </View>
         )}
-
-        {/* Sacred Naam Japa Anchor Banner */}
-        <TouchableOpacity
-          style={styles.naamJapaCard}
-          onPress={() => {
-            HapticService.naamJapaPulse();
-            setIsNaamJapaOpen(true);
-          }}
-          activeOpacity={0.85}
-        >
-          <View style={styles.naamJapaHeader}>
-            <View style={styles.naamJapaLeft}>
-              <Text style={styles.naamJapaTag}>नाम जप • SACRED NAAM ANCHOR</Text>
-              <Text style={styles.naamJapaTitle}>✨ {naamText}</Text>
-            </View>
-            <View style={styles.vibeIconBubble}>
-              <Text style={styles.vibeIcon}>📳</Text>
-            </View>
-          </View>
-          <Text style={styles.naamJapaSub}>
-            Feel the heartbeat vibration • Tap to drown back into the Naam
-          </Text>
-        </TouchableOpacity>
 
         {/* Timeline Progression Arc */}
         <View style={styles.timelineContainer}>
@@ -330,13 +301,6 @@ export const RoutineHome = ({ onNavigate }: Props) => {
         visible={isCustomizeOpen}
         onClose={() => setIsCustomizeOpen(false)}
         onSaved={loadData}
-      />
-
-      {/* Sacred Naam Japa Sanctuary Modal */}
-      <NaamJapaModal
-        visible={isNaamJapaOpen}
-        onClose={() => setIsNaamJapaOpen(false)}
-        onUpdated={loadData}
       />
 
       {/* iOS Instagram Blocker Wrapper Modal */}
@@ -533,61 +497,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     fontSize: 13,
     letterSpacing: 1,
-  },
-  naamJapaCard: {
-    backgroundColor: '#121212',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1.5,
-    borderColor: '#FFB800',
-    marginBottom: 20,
-    shadowColor: '#FFB800',
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  naamJapaHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  naamJapaLeft: {
-    flex: 1,
-  },
-  naamJapaTag: {
-    ...TYPOGRAPHY.caption,
-    color: '#FFB800',
-    fontWeight: '800',
-    fontSize: 9,
-    letterSpacing: 1.5,
-    marginBottom: 2,
-  },
-  naamJapaTitle: {
-    ...TYPOGRAPHY.body,
-    fontWeight: '800',
-    color: '#FFF',
-    fontSize: 16,
-    letterSpacing: 1.5,
-  },
-  naamJapaSub: {
-    ...TYPOGRAPHY.caption,
-    color: COLORS.TEXT_MUTED,
-    fontSize: 11,
-    lineHeight: 15,
-  },
-  vibeIconBubble: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(255, 184, 0, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 184, 0, 0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  vibeIcon: {
-    fontSize: 18,
   },
   timelineContainer: {
     position: 'relative',

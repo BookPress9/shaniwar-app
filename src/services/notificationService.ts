@@ -5,8 +5,7 @@ import { HapticService } from './haptics';
 // Configure notification behavior
 Notifications.setNotificationHandler({
   handleNotification: async () => {
-    // Fire sacred heartbeat haptic pulse whenever notification triggers
-    HapticService.naamJapaPulse();
+    HapticService.mediumImpact();
     return {
       shouldShowAlert: true,
       shouldPlaySound: true,
@@ -19,7 +18,7 @@ Notifications.setNotificationHandler({
 
 if (Platform.OS !== 'web') {
   Notifications.addNotificationReceivedListener(async () => {
-    await HapticService.naamJapaPulse();
+    await HapticService.mediumImpact();
   });
 }
 

@@ -10,7 +10,6 @@ import {
 import { COLORS } from '../../theme/colors';
 import { TYPOGRAPHY } from '../../theme/typography';
 import { HapticService } from '../../services/haptics';
-import { naamJapaService, NaamJapaConfig } from '../../services/naamJapaService';
 import { dbService } from '../../services/db';
 
 interface Props {
@@ -18,7 +17,6 @@ interface Props {
 }
 
 export const InstagramShieldIntercept = ({ onBack }: Props) => {
-  const [naamConfig, setNaamConfig] = useState<NaamJapaConfig | null>(null);
   const [consciousCountdown, setConsciousCountdown] = useState<number>(10);
   const [canProceed, setCanProceed] = useState(false);
   const [hasStartedTimer, setHasStartedTimer] = useState(false);
@@ -26,10 +24,8 @@ export const InstagramShieldIntercept = ({ onBack }: Props) => {
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    // Fire sacred heartbeat haptic on intercept
-    HapticService.naamJapaPulse();
-
-    naamJapaService.getConfig().then((cfg) => setNaamConfig(cfg));
+    // Fire wake/alert haptic on intercept
+    HapticService.heavyImpact();
 
     Animated.loop(
       Animated.sequence([
@@ -114,18 +110,12 @@ export const InstagramShieldIntercept = ({ onBack }: Props) => {
           You reached for Instagram out of reflex. Before you scroll, wake up.
         </Text>
 
-        {/* Sacred Naam Card */}
-        {naamConfig && (
-          <TouchableOpacity
-            style={styles.naamCard}
-            onPress={() => HapticService.naamJapaPulse()}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.naamTag}>YOUR SACRED ANCHOR</Text>
-            <Text style={styles.naamTitle}>✨ {naamConfig.naam}</Text>
-            <Text style={styles.naamPrompt}>Feel the sacred heartbeat vibration. Drown back in.</Text>
-          </TouchableOpacity>
-        )}
+        {/* Conscious Pause Card */}
+        <View style={styles.pauseCard}>
+          <Text style={styles.pauseTag}>CONSCIOUS PAUSE</Text>
+          <Text style={styles.pauseTitle}>BREATHE DEEPLY</Text>
+          <Text style={styles.pausePrompt}>Break the reflex loop. Notice your body right here.</Text>
+        </View>
 
         <Text style={styles.inquiryQuote}>
           “Are you living this moment, or is an algorithm living you?”
@@ -255,21 +245,17 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     maxWidth: 300,
   },
-  naamCard: {
+  pauseCard: {
     backgroundColor: '#131313',
     padding: 18,
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: '#FFB800',
+    borderColor: '#333',
     width: '100%',
     alignItems: 'center',
     marginBottom: 20,
-    shadowColor: '#FFB800',
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 4,
   },
-  naamTag: {
+  pauseTag: {
     ...TYPOGRAPHY.caption,
     color: '#FFB800',
     fontSize: 9,
@@ -277,7 +263,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
     marginBottom: 4,
   },
-  naamTitle: {
+  pauseTitle: {
     ...TYPOGRAPHY.h3,
     color: '#FFF',
     fontSize: 18,
@@ -285,7 +271,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     marginBottom: 4,
   },
-  naamPrompt: {
+  pausePrompt: {
     ...TYPOGRAPHY.caption,
     color: COLORS.TEXT_MUTED,
     fontSize: 11,

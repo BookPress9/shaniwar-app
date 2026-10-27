@@ -26,7 +26,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
       'Unlimited Dincharya Protection Windows',
       'Native iPhone Instagram & TikTok Blocker Wrapper',
       'CoreMotion Gait Walk Verification (No Snooze)',
-      'Custom Naam Japa Sacred Heartbeat Haptics',
+      'Conscious Focus Shield & Mindful Intercept',
       'Full 33-Vertebra Kundalini Spine Journey',
       'Unconscious Drift Intercept & Osho Mirror',
     ],

@@ -52,8 +52,8 @@ export const InstagramWrapperModal = ({ visible, onClose, onTestIntercept }: Pro
               <Text style={styles.whyTitle}>WHY WRAP INSTAGRAM WITH SHANIWAR?</Text>
               <Text style={styles.whyText}>
                 When you tap Instagram unconsciously, your thumb acts without your consent. By wrapping
-                your iPhone’s internal automation around Shaniwar, your phone snaps into the
-                Sacred Haptic Heartbeat and pulls you back into the Naam before the algorithm traps you.
+                your iPhone’s internal automation around Shaniwar, your phone halts the reflex loop
+                and gives you a conscious breath check before the algorithm traps you.
               </Text>
             </View>
 
@@ -112,7 +112,7 @@ export const InstagramWrapperModal = ({ visible, onClose, onTestIntercept }: Pro
               <TouchableOpacity
                 style={styles.testBtn}
                 onPress={() => {
-                  HapticService.naamJapaPulse();
+                  HapticService.heavyImpact();
                   onClose();
                   onTestIntercept();
                 }}
