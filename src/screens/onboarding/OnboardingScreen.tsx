@@ -26,6 +26,11 @@ import { notificationService } from '../../services/notificationService';
 import { motionSensorService } from '../../services/motionSensor';
 import { syncOutbox } from '../../services/syncOutbox';
 import { isSupabaseConfigured, supabase } from '../../services/supabase';
+import {
+  aiZenService,
+  ENERGY_LEAK_OPTIONS,
+  EnergyLeakId,
+} from '../../services/aiZenService';
 
 export const ONBOARDING_DONE_KEY = '@hybrid_monk_onboarded_v1';
 
@@ -123,16 +128,19 @@ const POPULAR_PRESETS: PopularRoutinePreset[] = [
 
 export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 }) => {
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(initialStep);
+
+  // Step 1: AI Energy Diagnostic & Archetype (Jira DEV-99)
+  const [selectedLeak, setSelectedLeak] = useState<EnergyLeakId>('dopamine_feeds');
   const [selectedArch, setSelectedArch] = useState<DincharyaArchetype>('builder');
 
-  // Circadian State (Step 2)
+  // Step 2: Circadian State (The Solar Arc)
   const [wakeHour, setWakeHour] = useState(5);
   const [wakeMin, setWakeMin] = useState(30);
   const [wakeMission, setWakeMission] = useState<'walk' | 'shake' | 'photo'>('walk');
   const [sleepHour, setSleepHour] = useState(22);
   const [sleepMin, setSleepMin] = useState(0);
 
-  // Day Planning State (Step 3)
+  // Step 2/3: Day Planning State
   const [customItems, setCustomItems] = useState<RoutineTimelineItem[]>([]);
   const [enabledItemIds, setEnabledItemIds] = useState<string[]>([
     'wake_alarm',
@@ -142,6 +150,16 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
     'evening_transition',
     'sleep_sanctum',
   ]);
+
+  // Step 3: 33 Spine Initiation State
+  const [isVertebra01Ignited, setIsVertebra01Ignited] = useState<boolean>(false);
+
+  // Step 4: Hardware Arming & Resonant Decay Test (Jira DEV-98)
+  const [isHapticDecayActive, setIsHapticDecayActive] = useState<boolean>(false);
+  const [decayPhase, setDecayPhase] = useState<'idle' | 'striking' | 'decaying' | 'silence'>('idle');
+  const [notifPermissionGranted, setNotifPermissionGranted] = useState<boolean>(false);
+  const [motionPermissionGranted, setMotionPermissionGranted] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Custom Item Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -153,11 +171,6 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
   const [customEndHour, setCustomEndHour] = useState(16);
   const [customEndMin, setCustomEndMin] = useState(0);
 
-  // Permissions State (Step 4)
-  const [notifPermissionGranted, setNotifPermissionGranted] = useState<boolean>(false);
-  const [motionPermissionGranted, setMotionPermissionGranted] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState(false);
-
   // Check initial permissions on mount
   useEffect(() => {
     notificationService.checkPermissions().then((granted) => {
@@ -166,6 +179,12 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
     const motionAvailable = motionSensorService.isSensorAvailable();
     setMotionPermissionGranted(motionAvailable);
   }, []);
+
+  // Handle AI Leak Diagnostic selection
+  const handleSelectLeak = (leakId: EnergyLeakId) => {
+    HapticService.selection();
+    setSelectedLeak(leakId);
+  };
 
   // Update circadian defaults when archetype changes
   const handleSelectArchetype = (arch: DincharyaArchetype) => {
@@ -232,7 +251,7 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
     };
   };
 
-  // Toggle item in Step 3
+  // Toggle routine items
   const handleToggleItem = (id: string) => {
     HapticService.selection();
     setEnabledItemIds((prev) =>
@@ -318,6 +337,28 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
     setEnabledItemIds((prev) => prev.filter((itId) => itId !== id));
   };
 
+  // Step 3: Ignite Vertebra 01 (Coccyx/Root)
+  const handleTouchVertebra01 = async () => {
+    await HapticService.vertebralAscensionWave();
+    setIsVertebra01Ignited(true);
+  };
+
+  // Step 4: Test Resonant Decay to Pure Silence (Jira DEV-98)
+  const handleTestResonantDecay = async () => {
+    if (isHapticDecayActive) return;
+    setIsHapticDecayActive(true);
+    setDecayPhase('striking');
+
+    setTimeout(() => setDecayPhase('decaying'), 200);
+    setTimeout(() => setDecayPhase('silence'), 800);
+    setTimeout(() => {
+      setIsHapticDecayActive(false);
+      setDecayPhase('idle');
+    }, 2400);
+
+    await HapticService.resonantDecayToSilence();
+  };
+
   // Request notifications permission in Step 4
   const handleRequestNotifications = async () => {
     HapticService.heavyImpact();
@@ -356,16 +397,20 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
         enabledItemIds,
       });
 
-      // 2. Mark onboarding completed in AsyncStorage
+      // 2. Persist AI baseline diagnostic profile (DEV-99)
+      await aiZenService.saveBaselineDiagnostic(selectedLeak);
+
+      // 3. Mark onboarding completed in AsyncStorage
       await AsyncStorage.setItem(ONBOARDING_DONE_KEY, 'true');
 
-      // 3. Queue profile setup to Supabase outbox if user exists
+      // 4. Queue profile setup to Supabase outbox if user exists
       if (isSupabaseConfigured) {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           await syncOutbox.enqueue('profiles', {
             id: user.id,
             monk_title: selectedArch.toUpperCase(),
+            energy_leak: selectedLeak,
             updated_at: new Date().toISOString(),
           });
         }
@@ -379,6 +424,7 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
   };
 
   const sleepDuration = calculateSleepDuration();
+  const currentLeakOption = aiZenService.getLeakOption(selectedLeak);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -405,12 +451,12 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
         <Text style={styles.stepLabel}>
           STEP {currentStep} OF 4 •{' '}
           {currentStep === 1
-            ? 'LIFE ARCHETYPE'
+            ? 'THE SOVEREIGN THRESHOLD'
             : currentStep === 2
-            ? 'CIRCADIAN ANCHORS'
+            ? 'THE SOLAR ARC (DINCHARYA)'
             : currentStep === 3
-            ? 'PLAN YOUR DAY ARC'
-            : 'ARM PERMISSIONS'}
+            ? 'THE 33 LIVING SPINE (SADHANA)'
+            : 'HARDWARE AS SPIRIT'}
         </Text>
       </View>
 
@@ -418,22 +464,62 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* ==================== STEP 1: ARCHETYPE ==================== */}
+        {/* ==================== STEP 1: AI ENERGY DIAGNOSTIC & ARCHETYPE (DEV-99) ==================== */}
         {currentStep === 1 && (
           <View>
             <View style={styles.header}>
               <Text style={styles.eyebrow}>THE SOVEREIGN RETURN</Text>
               <Text style={styles.title}>The world is loud.</Text>
-              <Text style={styles.titleEm}>Be here.</Text>
+              <Text style={styles.titleEm}>Where does your life force bleed?</Text>
               <Text style={styles.subtitle}>
-                Ancient monks left the world behind to find themselves. We are the modern monks—living
-                in the world, mastering the world, staying anchored.
+                Before setting a routine, acknowledge the leak. Shaniwar places a mirror before you,
+                not a cage.
               </Text>
             </View>
 
+            {/* AI Energy Diagnostic Leak Options */}
             <View style={styles.sectionHeaderBox}>
-              <Text style={styles.sectionHeading}>SELECT YOUR DAILY ARCHETYPE</Text>
-              <Text style={styles.sectionSub}>Choose your base lifestyle rhythm:</Text>
+              <Text style={styles.sectionHeading}>IDENTIFY YOUR PRIMARY ATTENTION LEAK</Text>
+              <Text style={styles.sectionSub}>Select the pattern draining your life force:</Text>
+            </View>
+
+            <View style={styles.leakGrid}>
+              {ENERGY_LEAK_OPTIONS.map((leak) => {
+                const isSelected = selectedLeak === leak.id;
+                return (
+                  <TouchableOpacity
+                    key={leak.id}
+                    style={[styles.leakCard, isSelected && styles.leakCardSelected]}
+                    onPress={() => handleSelectLeak(leak.id)}
+                    activeOpacity={0.85}
+                  >
+                    <View style={styles.leakTopRow}>
+                      <Text style={styles.leakIcon}>{leak.icon}</Text>
+                      <Text style={[styles.leakLabel, isSelected && styles.leakLabelSelected]}>
+                        {leak.label}
+                      </Text>
+                    </View>
+                    <Text style={styles.leakTagline}>{leak.tagline}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {/* Bodhidharma Zen Intelligence Mirror Card (DEV-99) */}
+            <View style={styles.zenMirrorCard}>
+              <View style={styles.zenMirrorBadgeRow}>
+                <Text style={styles.zenMirrorBadge}>ZEN INTELLIGENCE • BODHIDHARMA MIRROR</Text>
+                <Text style={styles.zenMirrorFocus}>{currentLeakOption.priorityFocus}</Text>
+              </View>
+              <Text style={styles.zenMirrorText}>
+                "{currentLeakOption.bodhidharmaDiagnosis}"
+              </Text>
+            </View>
+
+            {/* Base Life Archetype Selector */}
+            <View style={[styles.sectionHeaderBox, { marginTop: 24 }]}>
+              <Text style={styles.sectionHeading}>CALIBRATE LIFE ARCHETYPE</Text>
+              <Text style={styles.sectionSub}>Choose your initial circadian baseline:</Text>
             </View>
 
             <View style={styles.archetypeGrid}>
@@ -479,15 +565,16 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
           </View>
         )}
 
-        {/* ==================== STEP 2: CIRCADIAN CALIBRATION ==================== */}
+        {/* ==================== STEP 2: THE SOLAR ARC (DINCHARYA) ==================== */}
         {currentStep === 2 && (
           <View>
             <View style={styles.header}>
-              <Text style={styles.eyebrow}>CIRCADIAN CALIBRATION</Text>
-              <Text style={styles.title}>Wake & Sleep Rhythm</Text>
+              <Text style={styles.eyebrow}>THE CROSS OF EXISTENCE • HORIZONTAL AXIS</Text>
+              <Text style={styles.title}>The Solar Arc</Text>
+              <Text style={styles.titleEm}>Planetary Rhythm.</Text>
               <Text style={styles.subtitle}>
-                Lock in your morning ignition and evening recovery sanctum. Your protection window and
-                energy arc revolve around these anchors.
+                The sun rises, prana surges, twilight settles, the body restores. Your 24-hour day is
+                an unbroken arc of light and blood.
               </Text>
             </View>
 
@@ -511,7 +598,7 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
                   <Text style={styles.clockTime}>
                     {routineService.formatTimeDisplay(wakeHour, wakeMin)}
                   </Text>
-                  <Text style={styles.clockSub}>IMPOSSIBLE TO SNOOZE</Text>
+                  <Text style={styles.clockSub}>COREMOTION • ZERO SNOOZE</Text>
                 </View>
 
                 <TouchableOpacity
@@ -649,62 +736,49 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
                   Restoration Window: {sleepDuration.hours}h {sleepDuration.minutes > 0 ? `${sleepDuration.minutes}m` : ''}
                 </Text>
                 <Text style={styles.readoutDesc}>
-                  Provides optimal NREM slow-wave and REM brain restoration between digital blackout and
-                  morning ignition.
+                  Provides optimal slow-wave NREM and REM brain restoration between blackout and morning
+                  ignition.
                 </Text>
               </View>
             </View>
-          </View>
-        )}
 
-        {/* ==================== STEP 3: DAY ARC PLANNING & CUSTOM ITEMS ==================== */}
-        {currentStep === 3 && (
-          <View>
-            <View style={styles.header}>
-              <Text style={styles.eyebrow}>INDIVIDUAL CUSTOMIZATION</Text>
-              <Text style={styles.title}>Plan Your Whole Day</Text>
-              <Text style={styles.subtitle}>
-                Include additional routine items to tailor the timeline to your career, fitness, and
-                personal life rhythm.
-              </Text>
+            {/* Day Arc Timeline Preview & Custom Add */}
+            <View style={[styles.sectionHeaderBox, { marginTop: 24 }]}>
+              <Text style={styles.sectionHeading}>INDIVIDUAL TIMELINE CUSTOMIZATION</Text>
+              <Text style={styles.sectionSub}>Quickly attach daily blocks to your solar arc:</Text>
             </View>
 
-            {/* Quick Add Popular Blocks */}
-            <View style={styles.popularSection}>
-              <Text style={styles.sectionHeading}>QUICK-ADD POPULAR ROUTINES</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.popularList}>
-                {POPULAR_PRESETS.map((preset) => {
-                  const isAlreadyAdded = customItems.some((ci) => ci.title === preset.title);
-                  return (
-                    <TouchableOpacity
-                      key={preset.id}
-                      style={[styles.popularCard, isAlreadyAdded && styles.popularCardAdded]}
-                      onPress={() => !isAlreadyAdded && handleAddPreset(preset)}
-                      activeOpacity={0.8}
-                      disabled={isAlreadyAdded}
-                    >
-                      <Text style={styles.popularIcon}>{preset.icon}</Text>
-                      <Text style={styles.popularTitle} numberOfLines={1}>
-                        {preset.title}
-                      </Text>
-                      <Text style={styles.popularTime}>
-                        {routineService.formatTimeDisplay(
-                          preset.hour,
-                          preset.minute,
-                          preset.endHour,
-                          preset.endMinute
-                        )}
-                      </Text>
-                      <Text style={[styles.popularAction, isAlreadyAdded && { color: '#39D98A' }]}>
-                        {isAlreadyAdded ? 'Added ✓' : '+ Add to Day'}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
-            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.popularList}>
+              {POPULAR_PRESETS.map((preset) => {
+                const isAlreadyAdded = customItems.some((ci) => ci.title === preset.title);
+                return (
+                  <TouchableOpacity
+                    key={preset.id}
+                    style={[styles.popularCard, isAlreadyAdded && styles.popularCardAdded]}
+                    onPress={() => !isAlreadyAdded && handleAddPreset(preset)}
+                    activeOpacity={0.8}
+                    disabled={isAlreadyAdded}
+                  >
+                    <Text style={styles.popularIcon}>{preset.icon}</Text>
+                    <Text style={styles.popularTitle} numberOfLines={1}>
+                      {preset.title}
+                    </Text>
+                    <Text style={styles.popularTime}>
+                      {routineService.formatTimeDisplay(
+                        preset.hour,
+                        preset.minute,
+                        preset.endHour,
+                        preset.endMinute
+                      )}
+                    </Text>
+                    <Text style={[styles.popularAction, isAlreadyAdded && { color: '#39D98A' }]}>
+                      {isAlreadyAdded ? 'Added ✓' : '+ Add to Day'}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
 
-            {/* Add Custom Routine Block CTA */}
             <TouchableOpacity
               style={styles.addCustomBtn}
               onPress={() => {
@@ -716,11 +790,8 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
               <Text style={styles.addCustomBtnText}>+ Add Custom Routine Block</Text>
             </TouchableOpacity>
 
-            {/* Day Arc Timeline Preview */}
+            {/* Timeline Preview List */}
             <View style={styles.timelinePreviewSection}>
-              <Text style={styles.sectionHeading}>YOUR DAY TIMELINE PREVIEW</Text>
-
-              {/* Standard Core Items */}
               {[
                 {
                   id: 'wake_alarm',
@@ -824,16 +895,172 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
           </View>
         )}
 
-        {/* ==================== STEP 4: PERMISSIONS GATE ==================== */}
+        {/* ==================== STEP 3: THE 33 LIVING SPINE (SADHANA) ==================== */}
+        {currentStep === 3 && (
+          <View>
+            <View style={styles.header}>
+              <Text style={styles.eyebrow}>THE CROSS OF EXISTENCE • VERTICAL AXIS</Text>
+              <Text style={styles.title}>The 33 Living Spine</Text>
+              <Text style={styles.titleEm}>Awakened Consciousness.</Text>
+              <Text style={styles.subtitle}>
+                Your spine is your physical reality right now. 33 vertebrae of ascending awareness—from
+                earth grounding at the coccyx to pure sovereign witness (Sakshi) at the crown.
+              </Text>
+            </View>
+
+            {/* Vertebra 01 Interactive Initiation Card */}
+            <TouchableOpacity
+              style={[
+                styles.spineInitiationCard,
+                isVertebra01Ignited && styles.spineInitiationCardIgnited,
+              ]}
+              onPress={handleTouchVertebra01}
+              activeOpacity={0.85}
+            >
+              <View style={styles.spineInitiationHeader}>
+                <View
+                  style={[
+                    styles.spineNodePulse,
+                    isVertebra01Ignited && styles.spineNodePulseIgnited,
+                  ]}
+                >
+                  <Text style={styles.spineNodeNumber}>01</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.spineNodeTitle}>VERTEBRA 01 • MULADHARA (ROOT COCCYX)</Text>
+                  <Text style={styles.spineNodeSub}>
+                    {isVertebra01Ignited
+                      ? 'CURRENT IGNITED • GROUNDING SEALED'
+                      : 'TOUCH TO IGNITE YOUR NERVOUS SYSTEM'}
+                  </Text>
+                </View>
+              </View>
+
+              {isVertebra01Ignited ? (
+                <View style={styles.spineIgnitedBanner}>
+                  <Text style={styles.spineIgnitedCheck}>✓</Text>
+                  <Text style={styles.spineIgnitedText}>
+                    "The foundation is sealed. 32 thresholds await above. One conscious breath at a
+                    time."
+                  </Text>
+                </View>
+              ) : (
+                <View style={styles.spinePromptBox}>
+                  <Text style={styles.spinePromptText}>
+                    Tap to trigger the Vertebral Ascension Wave through your device.
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            {/* Spine Architectural Map Preview */}
+            <View style={[styles.sectionHeaderBox, { marginTop: 24 }]}>
+              <Text style={styles.sectionHeading}>THE FOUR SPINAL CONSCIOUSNESS ZONES</Text>
+              <Text style={styles.sectionSub}>Ascending column of sovereign awareness:</Text>
+            </View>
+
+            <View style={styles.spineZonesContainer}>
+              {[
+                {
+                  zone: 'CERVICAL & CRANIAL (25–33)',
+                  title: 'Sakshi / The Witness State',
+                  desc: 'Pure sovereign awareness looking directly at the digital matrix untouched.',
+                  color: '#FFB800',
+                  active: false,
+                },
+                {
+                  zone: 'THORACIC (17–24)',
+                  title: 'Heart Center / Stillness in Chaos',
+                  desc: 'De-armoring the chest. Witnessing digital agitation without flinching.',
+                  color: '#6C63FF',
+                  active: false,
+                },
+                {
+                  zone: 'LUMBAR (09–16)',
+                  title: 'Solar Plexus / Vital Prana',
+                  desc: '90-minute sustained deep focus capacity without dopamine grasping.',
+                  color: '#E84545',
+                  active: false,
+                },
+                {
+                  zone: 'SACRAL & COCCYX (01–08)',
+                  title: 'Root / Grounding in Reality',
+                  desc: 'Circadian ignition. Feet on the earth. Waking up without device noise.',
+                  color: '#39D98A',
+                  active: true,
+                },
+              ].map((z, idx) => (
+                <View key={idx} style={[styles.spineZoneCard, z.active && styles.spineZoneCardActive]}>
+                  <View style={styles.spineZoneTop}>
+                    <Text style={[styles.spineZoneTag, { color: z.color }]}>{z.zone}</Text>
+                    {z.active && <Text style={styles.spineZoneCurrent}>ACTIVE THRESHOLD</Text>}
+                  </View>
+                  <Text style={styles.spineZoneTitle}>{z.title}</Text>
+                  <Text style={styles.spineZoneDesc}>{z.desc}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* ==================== STEP 4: HARDWARE ARMING & RESONANT DECAY TEST (DEV-98) ==================== */}
         {currentStep === 4 && (
           <View>
             <View style={styles.header}>
-              <Text style={styles.eyebrow}>HARDWARE ARMING</Text>
-              <Text style={styles.title}>Device Permissions</Text>
+              <Text style={styles.eyebrow}>HARDWARE AS SPIRIT</Text>
+              <Text style={styles.title}>Sensory Engine & Arming</Text>
+              <Text style={styles.titleEm}>Zero Clipping. Pure Silence.</Text>
               <Text style={styles.subtitle}>
-                Shaniwar enforces sovereign attention and zero-snooze mornings through native iOS and
-                Android device capabilities.
+                Shaniwar treats your glass and haptic actuators as a sacred instrument. Zero cloud tracking,
+                zero ads, pure presence.
               </Text>
+            </View>
+
+            {/* Interactive Resonant Decay Test Card (Jira DEV-98) */}
+            <View style={styles.decayCard}>
+              <View style={styles.decayHeader}>
+                <Text style={styles.decayBadge}>JIRA DEV-98 • SENSORY PRECISION</Text>
+                <Text style={styles.decayTitle}>Resonant Decay to Pure Silence</Text>
+                <Text style={styles.decayDesc}>
+                  Experience the multi-tier micro-frequency haptic curve mimicking a Tibetan singing bowl
+                  decaying into zero silence.
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                style={[
+                  styles.decayTestBtn,
+                  isHapticDecayActive && styles.decayTestBtnActive,
+                ]}
+                onPress={handleTestResonantDecay}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.decayTestBtnText}>
+                  {decayPhase === 'idle'
+                    ? '🔔 TEST RESONANT DECAY TO SILENCE'
+                    : decayPhase === 'striking'
+                    ? '⚡ INITIAL STRIKE (HEAVY)...'
+                    : decayPhase === 'decaying'
+                    ? '〰️ HARMONIC ATTENUATION...'
+                    : '✓ PURE SILENCE REACHED'}
+                </Text>
+              </TouchableOpacity>
+
+              <View style={styles.decayWaveContainer}>
+                {[1.0, 0.75, 0.5, 0.3, 0.15, 0.05, 0.0].map((amp, idx) => (
+                  <View
+                    key={idx}
+                    style={[
+                      styles.decayWaveBar,
+                      {
+                        height: Math.max(4, amp * 28),
+                        opacity: isHapticDecayActive ? 0.4 + (1 - amp) * 0.6 : 0.3,
+                        backgroundColor: isHapticDecayActive ? '#FFB800' : '#444',
+                      },
+                    ]}
+                  />
+                ))}
+              </View>
             </View>
 
             {/* Permission Card 1: Notifications & Focus Shield */}
@@ -845,8 +1072,8 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
                 <View style={{ flex: 1 }}>
                   <Text style={styles.permTitle}>Focus Shield & Push Alerts</Text>
                   <Text style={styles.permSub}>
-                    Required to sound daily routine alerts, enforce distraction blackout transitions, and
-                    trigger the Obsidian Shield.
+                    Required to trigger routine transitions, enforce the 7-second witness mirror, and
+                    sound alarms.
                   </Text>
                 </View>
               </View>
@@ -878,10 +1105,10 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
                   <Text style={styles.permIcon}>🚶</Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.permTitle}>CoreMotion & Physical Sensor</Text>
+                  <Text style={styles.permTitle}>CoreMotion Sensor (Non-Snooze)</Text>
                   <Text style={styles.permSub}>
-                    Verifies genuine 20-step morning walks and shake patterns. Without motion, the alarm
-                    will continue sounding.
+                    Verifies genuine 20-step morning walks. Without physical movement, the alarm will
+                    continue sounding.
                   </Text>
                 </View>
               </View>
@@ -913,10 +1140,10 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
                   <Text style={styles.permIcon}>🔔</Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.permTitle}>High-Priority Audio Alarm</Text>
+                  <Text style={styles.permTitle}>High-Priority Monastic Audio</Text>
                   <Text style={styles.permSub}>
                     Audio alert playback configured to awaken you even during Do Not Disturb or silent
-                    profiles.
+                    modes.
                   </Text>
                 </View>
               </View>
@@ -954,10 +1181,10 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
               >
                 <Text style={styles.nextBtnText}>
                   {currentStep === 1
-                    ? 'CALIBRATE WAKE & SLEEP →'
+                    ? 'PROCEED TO SOLAR ARC →'
                     : currentStep === 2
-                    ? 'PLAN YOUR DAY ARC →'
-                    : 'ARM NATIVE PERMISSIONS →'}
+                    ? 'INITIATE 33 LIVING SPINE →'
+                    : 'ARM HARDWARE SENSORS →'}
                 </Text>
               </TouchableOpacity>
             ) : (
@@ -968,7 +1195,7 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
                 disabled={isLoading}
               >
                 <Text style={styles.lockInBtnText}>
-                  {isLoading ? 'CALIBRATING ARC...' : 'LOCK IN SOVEREIGN DINCHARYA →'}
+                  {isLoading ? 'CALIBRATING SPIRIT...' : 'ENTER THE VIRTUAL MONASTERY →'}
                 </Text>
               </TouchableOpacity>
             )}
@@ -1102,7 +1329,7 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
                 onPress={handleSaveCustomItem}
                 activeOpacity={0.85}
               >
-                <Text style={styles.modalAddBtnText}>INSERT INTO DAY ARC →</Text>
+                <Text style={styles.modalAddBtnText}>INSERT INTO SOLAR ARC →</Text>
               </TouchableOpacity>
             </ScrollView>
           </View>
@@ -1136,7 +1363,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#1C221C',
   },
   stepSegmentCompleted: {
-    backgroundColor: '#39D98A',
+    backgroundColor: '#FFB800',
   },
   stepSegmentCurrent: {
     backgroundColor: '#FFB800',
@@ -1165,16 +1392,16 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   title: {
-    fontSize: 30,
+    fontSize: 28,
     fontWeight: '300',
     color: '#F4F4EC',
-    lineHeight: 36,
+    lineHeight: 34,
   },
   titleEm: {
-    fontSize: 30,
+    fontSize: 28,
     fontWeight: '700',
     color: '#FFB800',
-    lineHeight: 38,
+    lineHeight: 36,
     marginBottom: 8,
   },
   subtitle: {
@@ -1199,30 +1426,103 @@ const styles = StyleSheet.create({
     color: '#71796D',
     marginTop: 2,
   },
+
+  // Step 1: AI Energy Diagnostic styles
+  leakGrid: {
+    gap: 10,
+    marginBottom: 16,
+  },
+  leakCard: {
+    backgroundColor: '#101310',
+    borderWidth: 1,
+    borderColor: '#202620',
+    borderRadius: 14,
+    padding: 14,
+  },
+  leakCardSelected: {
+    borderColor: '#FFB800',
+    backgroundColor: '#171B14',
+  },
+  leakTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 4,
+  },
+  leakIcon: {
+    fontSize: 18,
+  },
+  leakLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#DDD',
+  },
+  leakLabelSelected: {
+    color: '#FFB800',
+  },
+  leakTagline: {
+    fontSize: 11,
+    color: '#8E958A',
+    lineHeight: 16,
+  },
+  zenMirrorCard: {
+    backgroundColor: '#151713',
+    borderWidth: 1,
+    borderColor: '#FFB80055',
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 16,
+  },
+  zenMirrorBadgeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  zenMirrorBadge: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+    color: '#FFB800',
+  },
+  zenMirrorFocus: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#39D98A',
+  },
+  zenMirrorText: {
+    fontSize: 13,
+    fontStyle: 'italic',
+    color: '#E6E8E2',
+    lineHeight: 20,
+  },
+
+  // Archetypes
   archetypeGrid: {
-    gap: 12,
+    gap: 10,
+    marginBottom: 16,
   },
   archCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#101210',
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 1.5,
-    borderColor: '#222820',
+    backgroundColor: '#101310',
+    borderWidth: 1,
+    borderColor: '#202620',
+    borderRadius: 14,
+    padding: 12,
+    gap: 12,
   },
   archCardSelected: {
-    backgroundColor: '#161A14',
     borderColor: '#FFB800',
+    backgroundColor: '#171B14',
   },
   archIconContainer: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: '#191E18',
+    borderRadius: 10,
+    backgroundColor: '#1C221C',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 14,
   },
   archIcon: {
     fontSize: 22,
@@ -1237,17 +1537,15 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   archName: {
-    ...TYPOGRAPHY.body,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
-    color: '#D8DCD2',
+    color: '#DDD',
   },
   archNameSelected: {
-    color: '#FFF',
+    color: '#FFB800',
   },
   archTime: {
-    ...TYPOGRAPHY.caption,
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
     color: '#71796D',
   },
@@ -1255,62 +1553,57 @@ const styles = StyleSheet.create({
     color: '#FFB800',
   },
   archTagline: {
-    ...TYPOGRAPHY.caption,
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600',
-    color: '#8E958A',
-    marginBottom: 4,
+    color: '#B49860',
+    marginBottom: 2,
   },
   archDescription: {
-    ...TYPOGRAPHY.caption,
     fontSize: 10,
+    color: '#8E958A',
     lineHeight: 14,
-    color: '#656D60',
   },
+
+  // Step 2: Solar Arc
   cardBox: {
-    backgroundColor: '#101210',
-    borderRadius: 18,
-    padding: 18,
+    backgroundColor: '#111411',
     borderWidth: 1,
-    borderColor: '#222820',
-    marginBottom: 16,
-  },
-  cardBoxHeader: {
+    borderColor: '#222822',
+    borderRadius: 16,
+    padding: 16,
     marginBottom: 14,
   },
+  cardBoxHeader: {
+    marginBottom: 12,
+  },
   cardBoxTag: {
-    ...TYPOGRAPHY.caption,
     fontSize: 9,
     fontWeight: '800',
     color: '#FFB800',
-    letterSpacing: 1.2,
-    marginBottom: 4,
+    letterSpacing: 1.5,
+    marginBottom: 2,
   },
   cardBoxTitle: {
-    ...TYPOGRAPHY.body,
     fontSize: 16,
     fontWeight: '700',
-    color: '#FFF',
+    color: '#F4F4EC',
   },
   clockDisplayRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   stepperBtn: {
-    backgroundColor: '#1A201A',
-    borderRadius: 10,
-    paddingVertical: 10,
+    backgroundColor: '#1C221C',
+    paddingVertical: 8,
     paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: '#2A332A',
+    borderRadius: 8,
   },
   stepperBtnText: {
-    ...TYPOGRAPHY.caption,
-    color: '#D8DCD2',
+    fontSize: 11,
     fontWeight: '700',
-    fontSize: 12,
+    color: '#CCCCCC',
   },
   clockFace: {
     alignItems: 'center',
@@ -1322,9 +1615,8 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   clockSub: {
-    ...TYPOGRAPHY.caption,
     fontSize: 9,
-    fontWeight: '700',
+    fontWeight: '800',
     color: '#71796D',
     letterSpacing: 1,
     marginTop: 2,
@@ -1332,172 +1624,160 @@ const styles = StyleSheet.create({
   presetChipsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 14,
+    gap: 6,
+    justifyContent: 'center',
+    marginBottom: 10,
   },
   chip: {
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    backgroundColor: '#181C18',
+    backgroundColor: '#171B17',
     borderWidth: 1,
-    borderColor: '#242C24',
+    borderColor: '#283028',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 6,
   },
   chipSelected: {
     backgroundColor: '#FFB800',
     borderColor: '#FFB800',
   },
   chipText: {
-    ...TYPOGRAPHY.caption,
-    color: '#8E958A',
-    fontSize: 11,
+    fontSize: 10,
+    color: '#9CA395',
     fontWeight: '600',
   },
   chipTextSelected: {
-    color: '#070807',
+    color: '#000000',
     fontWeight: '800',
   },
   missionContainer: {
+    marginTop: 10,
     borderTopWidth: 1,
-    borderTopColor: '#1A1E1A',
-    paddingTop: 12,
+    borderTopColor: '#1F251F',
+    paddingTop: 10,
   },
   missionLabel: {
-    ...TYPOGRAPHY.caption,
     fontSize: 9,
     fontWeight: '800',
-    color: '#8E958A',
+    color: '#B49860',
     letterSpacing: 1,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   missionChipsRow: {
-    gap: 8,
+    gap: 6,
   },
   missionChip: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    backgroundColor: '#161916',
+    backgroundColor: '#171B17',
     borderWidth: 1,
-    borderColor: '#222822',
+    borderColor: '#242C24',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 8,
   },
   missionChipSelected: {
-    backgroundColor: '#1F251E',
-    borderColor: '#39D98A',
+    borderColor: '#FFB800',
+    backgroundColor: '#1F231B',
   },
   missionChipText: {
-    ...TYPOGRAPHY.caption,
     fontSize: 11,
-    color: '#A0A89C',
+    color: '#CCCCCC',
     fontWeight: '600',
   },
   missionChipTextSelected: {
-    color: '#39D98A',
+    color: '#FFB800',
     fontWeight: '700',
   },
   readoutCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#121614',
+    backgroundColor: '#121A13',
+    borderWidth: 1,
+    borderColor: '#253E29',
     borderRadius: 14,
     padding: 14,
-    borderWidth: 1,
-    borderColor: '#1F2822',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
     marginBottom: 16,
   },
   readoutIcon: {
-    fontSize: 24,
-    marginRight: 12,
+    fontSize: 22,
   },
   readoutTitle: {
-    ...TYPOGRAPHY.body,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
-    color: '#FFF',
+    color: '#86E09E',
     marginBottom: 2,
   },
   readoutDesc: {
-    ...TYPOGRAPHY.caption,
     fontSize: 10,
-    color: '#858E80',
+    color: '#71796D',
     lineHeight: 14,
-  },
-  popularSection: {
-    marginBottom: 16,
   },
   popularList: {
     gap: 10,
-    paddingVertical: 8,
+    paddingBottom: 8,
   },
   popularCard: {
     backgroundColor: '#121612',
-    borderRadius: 14,
-    padding: 12,
-    width: 140,
     borderWidth: 1,
-    borderColor: '#222822',
+    borderColor: '#242D24',
+    borderRadius: 10,
+    padding: 10,
+    minWidth: 130,
   },
   popularCardAdded: {
-    borderColor: '#39D98A',
-    backgroundColor: '#131B15',
+    borderColor: '#39D98A55',
+    backgroundColor: '#101C12',
   },
   popularIcon: {
-    fontSize: 20,
-    marginBottom: 6,
+    fontSize: 16,
+    marginBottom: 4,
   },
   popularTitle: {
-    ...TYPOGRAPHY.caption,
     fontSize: 11,
     fontWeight: '700',
-    color: '#E0E4DC',
-    marginBottom: 2,
+    color: '#EEE',
   },
   popularTime: {
-    ...TYPOGRAPHY.caption,
     fontSize: 9,
-    color: '#71796D',
-    marginBottom: 8,
+    color: '#FFB800',
+    marginTop: 2,
   },
   popularAction: {
-    ...TYPOGRAPHY.caption,
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '800',
     color: '#FFB800',
+    marginTop: 4,
   },
   addCustomBtn: {
-    backgroundColor: '#181E18',
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
+    backgroundColor: '#161C16',
     borderWidth: 1,
-    borderColor: '#2E382E',
-    borderStyle: 'dashed',
-    marginBottom: 20,
+    borderColor: '#2D382D',
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+    marginTop: 10,
+    marginBottom: 16,
   },
   addCustomBtnText: {
-    ...TYPOGRAPHY.caption,
-    color: '#FFB800',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
-    letterSpacing: 0.5,
+    color: '#CCCCCC',
   },
   timelinePreviewSection: {
-    backgroundColor: '#101210',
-    borderRadius: 18,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#222820',
+    gap: 8,
+    marginBottom: 16,
   },
   timelineItemRow: {
+    backgroundColor: '#111411',
+    borderWidth: 1,
+    borderColor: '#202620',
+    borderRadius: 10,
+    padding: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#181C18',
+    gap: 10,
   },
   timelineItemIcon: {
-    fontSize: 18,
-    marginRight: 12,
+    fontSize: 16,
   },
   timelineItemTop: {
     flexDirection: 'row',
@@ -1505,215 +1785,383 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   timelineItemTitle: {
-    ...TYPOGRAPHY.body,
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: '700',
-    color: '#D8DCD2',
+    color: '#EEE',
   },
   timelineItemTime: {
-    ...TYPOGRAPHY.caption,
     fontSize: 10,
     fontWeight: '700',
     color: '#FFB800',
   },
   timelineItemTag: {
-    ...TYPOGRAPHY.caption,
-    fontSize: 9,
-    color: '#656D60',
-    fontWeight: '700',
+    fontSize: 8,
+    fontWeight: '800',
+    color: '#71796D',
+    letterSpacing: 1,
     marginTop: 2,
   },
   customItemsSection: {
-    marginTop: 14,
-    paddingTop: 14,
-    borderTopWidth: 1,
-    borderTopColor: '#242C24',
+    marginTop: 8,
+    gap: 6,
   },
   customItemsHeader: {
-    ...TYPOGRAPHY.caption,
     fontSize: 9,
     fontWeight: '800',
-    color: '#39D98A',
+    color: '#B49860',
     letterSpacing: 1,
-    marginBottom: 8,
+    marginBottom: 4,
   },
   customItemRow: {
+    backgroundColor: '#141814',
+    borderWidth: 1,
+    borderColor: '#2B382B',
+    borderRadius: 10,
+    padding: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    backgroundColor: '#141814',
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    marginBottom: 8,
+    gap: 10,
   },
   customItemIcon: {
-    fontSize: 16,
-    marginRight: 10,
+    fontSize: 14,
   },
   customItemTitle: {
-    ...TYPOGRAPHY.body,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     color: '#FFF',
   },
   customItemSub: {
-    ...TYPOGRAPHY.caption,
-    fontSize: 10,
+    fontSize: 9,
     color: '#8E958A',
-    marginTop: 1,
   },
   deleteCustomBtn: {
-    padding: 6,
-    marginLeft: 8,
+    padding: 4,
   },
   deleteCustomText: {
     fontSize: 14,
   },
-  permCard: {
-    backgroundColor: '#101210',
+
+  // Step 3: 33 Living Spine Styles
+  spineInitiationCard: {
+    backgroundColor: '#121412',
+    borderWidth: 1,
+    borderColor: '#262D26',
     borderRadius: 16,
     padding: 16,
-    borderWidth: 1,
-    borderColor: '#222820',
-    marginBottom: 14,
+    marginBottom: 16,
   },
-  permHeader: {
+  spineInitiationCardIgnited: {
+    borderColor: '#FFB800',
+    backgroundColor: '#191C15',
+  },
+  spineInitiationHeader: {
     flexDirection: 'row',
-    marginBottom: 12,
+    alignItems: 'center',
+    gap: 12,
   },
-  permIconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#191E18',
+  spineNodePulse: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 2,
+    borderColor: '#444',
+    backgroundColor: '#171B17',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
   },
-  permIcon: {
-    fontSize: 20,
+  spineNodePulseIgnited: {
+    borderColor: '#FFB800',
+    backgroundColor: '#FFB80020',
   },
-  permTitle: {
-    ...TYPOGRAPHY.body,
-    fontSize: 14,
+  spineNodeNumber: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#FFB800',
+  },
+  spineNodeTitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#FFB800',
+    letterSpacing: 1,
+  },
+  spineNodeSub: {
+    fontSize: 9,
     fontWeight: '700',
-    color: '#FFF',
+    color: '#8E958A',
+    marginTop: 2,
+  },
+  spineIgnitedBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    marginTop: 12,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#2B3224',
+  },
+  spineIgnitedCheck: {
+    fontSize: 14,
+    color: '#39D98A',
+    fontWeight: '800',
+  },
+  spineIgnitedText: {
+    flex: 1,
+    fontSize: 11,
+    fontStyle: 'italic',
+    color: '#E0E2DC',
+    lineHeight: 16,
+  },
+  spinePromptBox: {
+    marginTop: 10,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#202620',
+  },
+  spinePromptText: {
+    fontSize: 10,
+    color: '#71796D',
+  },
+  spineZonesContainer: {
+    gap: 10,
+    marginBottom: 16,
+  },
+  spineZoneCard: {
+    backgroundColor: '#101310',
+    borderWidth: 1,
+    borderColor: '#202620',
+    borderRadius: 12,
+    padding: 12,
+  },
+  spineZoneCardActive: {
+    borderColor: '#39D98A55',
+    backgroundColor: '#121A13',
+  },
+  spineZoneTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 4,
   },
-  permSub: {
-    ...TYPOGRAPHY.caption,
-    fontSize: 11,
-    lineHeight: 16,
-    color: '#8E958A',
+  spineZoneTag: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 1,
   },
-  permBtn: {
-    backgroundColor: '#FFB800',
+  spineZoneCurrent: {
+    fontSize: 8,
+    fontWeight: '800',
+    color: '#39D98A',
+    backgroundColor: '#182E1D',
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    borderRadius: 4,
+  },
+  spineZoneTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#E0E2DC',
+    marginBottom: 2,
+  },
+  spineZoneDesc: {
+    fontSize: 10,
+    color: '#71796D',
+    lineHeight: 14,
+  },
+
+  // Step 4: Hardware Arming & Resonant Decay (DEV-98)
+  decayCard: {
+    backgroundColor: '#121512',
+    borderWidth: 1,
+    borderColor: '#242B24',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+  },
+  decayHeader: {
+    marginBottom: 12,
+  },
+  decayBadge: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#FFB800',
+    letterSpacing: 1.5,
+    marginBottom: 4,
+  },
+  decayTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#F4F4EC',
+    marginBottom: 4,
+  },
+  decayDesc: {
+    fontSize: 11,
+    color: '#8E958A',
+    lineHeight: 16,
+  },
+  decayTestBtn: {
+    backgroundColor: '#192019',
+    borderWidth: 1,
+    borderColor: '#FFB800',
     borderRadius: 10,
     paddingVertical: 12,
     alignItems: 'center',
+    marginBottom: 12,
+  },
+  decayTestBtnActive: {
+    backgroundColor: '#FFB800',
+  },
+  decayTestBtnText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#FFB800',
+    letterSpacing: 1,
+  },
+  decayWaveContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    height: 32,
+  },
+  decayWaveBar: {
+    width: 6,
+    borderRadius: 3,
+  },
+
+  permCard: {
+    backgroundColor: '#101310',
+    borderWidth: 1,
+    borderColor: '#202620',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 10,
+  },
+  permHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    marginBottom: 10,
+  },
+  permIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    backgroundColor: '#181E18',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  permIcon: {
+    fontSize: 18,
+  },
+  permTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#EEE',
+    marginBottom: 2,
+  },
+  permSub: {
+    fontSize: 10,
+    color: '#8E958A',
+    lineHeight: 14,
+  },
+  permBtn: {
+    backgroundColor: '#FFB800',
+    borderRadius: 8,
+    paddingVertical: 8,
+    alignItems: 'center',
   },
   permBtnGranted: {
-    backgroundColor: '#19281C',
+    backgroundColor: '#1C2E1F',
     borderWidth: 1,
     borderColor: '#39D98A',
   },
   permBtnText: {
-    ...TYPOGRAPHY.caption,
-    color: '#070807',
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '800',
+    color: '#000',
     letterSpacing: 1,
   },
   permBtnTextGranted: {
     color: '#39D98A',
   },
   permStatusPill: {
-    backgroundColor: '#151D17',
-    borderRadius: 8,
-    paddingVertical: 8,
+    backgroundColor: '#17271A',
+    paddingVertical: 6,
+    borderRadius: 6,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#29432E',
   },
   permStatusText: {
-    ...TYPOGRAPHY.caption,
-    color: '#39D98A',
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '800',
+    color: '#39D98A',
     letterSpacing: 1,
   },
+
+  // Bottom Navigation
   bottomNavSection: {
-    paddingTop: 16,
+    marginTop: 10,
+    paddingBottom: 20,
   },
   navRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
   },
   backBtn: {
     backgroundColor: '#161A16',
-    borderRadius: 14,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#283228',
+    borderColor: '#242C24',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
   },
   backBtnText: {
-    ...TYPOGRAPHY.caption,
-    color: '#A0A89C',
     fontSize: 12,
     fontWeight: '700',
+    color: '#A0A89C',
   },
   nextBtn: {
     flex: 1,
     backgroundColor: '#FFB800',
-    borderRadius: 14,
-    paddingVertical: 16,
+    paddingVertical: 14,
+    borderRadius: 12,
     alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#FFB800',
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  nextBtnText: {
-    ...TYPOGRAPHY.caption,
-    color: '#070807',
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 1,
   },
   lockInBtn: {
     backgroundColor: '#FFB800',
   },
-  lockInBtnText: {
-    ...TYPOGRAPHY.caption,
-    color: '#070807',
-    fontSize: 12,
+  nextBtnText: {
+    fontSize: 11,
     fontWeight: '800',
-    letterSpacing: 1.2,
+    color: '#000000',
+    letterSpacing: 1,
+  },
+  lockInBtnText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#000000',
+    letterSpacing: 1,
   },
   footnote: {
-    ...TYPOGRAPHY.caption,
-    color: '#555C50',
-    fontSize: 10,
     textAlign: 'center',
-    marginTop: 12,
+    fontSize: 10,
+    color: '#656D60',
+    marginTop: 10,
   },
+
+  // Modal
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.85)',
     justifyContent: 'flex-end',
   },
   modalSheet: {
-    backgroundColor: '#101210',
+    backgroundColor: '#121512',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    padding: 24,
     borderWidth: 1,
-    borderColor: '#283228',
-    maxHeight: '80%',
+    borderColor: '#263026',
+    padding: 20,
+    maxHeight: '85%',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -1722,109 +2170,101 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   modalTitle: {
-    ...TYPOGRAPHY.caption,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '800',
     color: '#FFB800',
-    letterSpacing: 1.2,
+    letterSpacing: 1.5,
   },
   modalCloseText: {
-    color: '#888',
-    fontSize: 18,
+    fontSize: 16,
+    color: '#AAA',
     fontWeight: '700',
   },
   inputLabel: {
-    ...TYPOGRAPHY.caption,
     fontSize: 9,
     fontWeight: '800',
-    color: '#8E958A',
+    color: '#B49860',
     letterSpacing: 1,
+    marginTop: 12,
     marginBottom: 6,
-    marginTop: 10,
   },
   textInput: {
-    backgroundColor: '#161A16',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    color: '#FFF',
-    fontSize: 13,
+    backgroundColor: '#171B17',
     borderWidth: 1,
     borderColor: '#263026',
+    borderRadius: 8,
+    padding: 10,
+    color: '#FFF',
+    fontSize: 12,
   },
   tagChipsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 6,
   },
   tagChip: {
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    backgroundColor: '#181C18',
+    backgroundColor: '#171B17',
     borderWidth: 1,
-    borderColor: '#283228',
+    borderColor: '#263026',
+    paddingVertical: 5,
+    paddingHorizontal: 8,
+    borderRadius: 6,
   },
   tagChipSelected: {
-    backgroundColor: '#FFB800',
     borderColor: '#FFB800',
+    backgroundColor: '#FFB80020',
   },
   tagChipText: {
-    ...TYPOGRAPHY.caption,
     fontSize: 10,
-    color: '#8E958A',
-    fontWeight: '700',
+    color: '#AAA',
+    fontWeight: '600',
   },
   tagChipTextSelected: {
-    color: '#070807',
-    fontWeight: '800',
+    color: '#FFB800',
+    fontWeight: '700',
   },
   timeSelectRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
   },
   timeInputBox: {
     flex: 1,
-    backgroundColor: '#161A16',
-    borderRadius: 10,
-    paddingVertical: 10,
-    alignItems: 'center',
+    backgroundColor: '#171B17',
     borderWidth: 1,
     borderColor: '#263026',
+    borderRadius: 8,
+    padding: 10,
+    alignItems: 'center',
   },
   timeValue: {
+    fontSize: 13,
+    fontWeight: '800',
     color: '#FFB800',
-    fontSize: 14,
-    fontWeight: '700',
   },
   timeAdjustBtn: {
-    backgroundColor: '#1F251F',
-    borderRadius: 8,
-    paddingVertical: 10,
+    backgroundColor: '#1C221C',
+    paddingVertical: 8,
     paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: '#2E3A2E',
+    borderRadius: 8,
   },
   timeAdjustBtnText: {
-    ...TYPOGRAPHY.caption,
-    color: '#D8DCD2',
     fontSize: 11,
     fontWeight: '700',
+    color: '#CCCCCC',
   },
   modalAddBtn: {
     backgroundColor: '#FFB800',
-    borderRadius: 12,
-    paddingVertical: 14,
+    borderRadius: 10,
+    paddingVertical: 12,
     alignItems: 'center',
     marginTop: 20,
-    marginBottom: 10,
+    marginBottom: 20,
   },
   modalAddBtnText: {
-    ...TYPOGRAPHY.caption,
-    color: '#070807',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '800',
-    letterSpacing: 1.2,
+    color: '#000',
+    letterSpacing: 1,
   },
 });

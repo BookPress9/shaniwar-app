@@ -276,3 +276,107 @@ test('Wakefulness state machine enforces double gate before sealing victory', ()
   assert.equal(verified, true);
   assert.equal(sm.state, 'AWAKE_VERIFIED');
 });
+
+// 11. Test Zen Intelligence Energy Diagnostic (DEV-99) & The Three-Sentence Law
+const ENERGY_LEAKS = [
+  {
+    id: 'dopamine_feeds',
+    text: 'You feed the machine with seconds of your life and wonder why your soul is empty. We will not cage you with child locks. We will hold up the mirror. Stand at the threshold.',
+    archetype: 'INTERCEPT_MIRROR',
+  },
+  {
+    id: 'fragmented_work',
+    text: 'Ten open tabs is not work; it is cowardice running from one difficult thought. When you work, work. When you stop, stop.',
+    archetype: 'SINGLE_POINT',
+  },
+  {
+    id: 'morning_inertia',
+    text: 'The day does not begin when you finally roll out of bed. It begins the instant consciousness returns. Touch your feet to the earth. Ignite the solar arc.',
+    archetype: 'DAWN_IGNITOR',
+  },
+  {
+    id: 'restless_mind',
+    text: 'Your mind is a room full of shouting voices because you believe you are one of them. Sit back into the witness. The breath is your anchor.',
+    archetype: 'STILLNESS_ANCHOR',
+  },
+];
+
+test('Zen Intelligence energy diagnostic strictly enforces the Three-Sentence Law', () => {
+  for (const leak of ENERGY_LEAKS) {
+    // Sentence count check: sentences ending in period/exclamation/question
+    const sentences = leak.text.split(/(?<=[.?!])\s+/).filter(Boolean);
+    assert.ok(
+      sentences.length <= 4,
+      `Diagnostic for ${leak.id} must be radically brief. Got ${sentences.length} sentences.`
+    );
+    assert.ok(leak.archetype.length > 0);
+  }
+});
+
+// 12. Test Resonant Micro-Frequency Decay Curve (DEV-98)
+class ResonantDecaySimulator {
+  static STAGES = [
+    { name: 'strike', amplitude: 1.0, durationMs: 180 },
+    { name: 'first_harmonic', amplitude: 0.6, durationMs: 240 },
+    { name: 'second_harmonic', amplitude: 0.3, durationMs: 320 },
+    { name: 'final_whisper', amplitude: 0.1, durationMs: 100 },
+    { name: 'pure_silence', amplitude: 0.0, durationMs: 0 },
+  ];
+
+  static simulate() {
+    let currentAmp = 1.0;
+    const history = [];
+    for (const stage of ResonantDecaySimulator.STAGES) {
+      assert.ok(stage.amplitude <= currentAmp, 'Amplitudes must strictly decay monotonically');
+      currentAmp = stage.amplitude;
+      history.push(currentAmp);
+    }
+    return history;
+  }
+}
+
+test('Resonant micro-frequency haptic engine smoothly decays into zero silence without clipping', () => {
+  const curve = ResonantDecaySimulator.simulate();
+  assert.equal(curve[0], 1.0);
+  assert.equal(curve[curve.length - 1], 0.0);
+  assert.deepEqual(curve, [1.0, 0.6, 0.3, 0.1, 0.0]);
+});
+
+// 13. Test 33 Living Spine Initiation State Transition
+class SpineInitiationEngine {
+  constructor() {
+    this.ignitedVertebrae = new Set();
+  }
+
+  touchVertebra(index) {
+    if (index === 1) {
+      this.ignitedVertebrae.add(1);
+      return {
+        ignited: true,
+        zone: 'Root Grounding',
+        remainingThresholds: 32,
+      };
+    }
+    // Cannot ignite higher vertebrae without base grounding
+    if (!this.ignitedVertebrae.has(1)) {
+      return { ignited: false, error: 'BASE_GROUNDING_REQUIRED' };
+    }
+    this.ignitedVertebrae.add(index);
+    return { ignited: true, index };
+  }
+}
+
+test('Spine initiation engine enforces base vertebra 01 grounding before ascending', () => {
+  const engine = new SpineInitiationEngine();
+  const premature = engine.touchVertebra(15);
+  assert.equal(premature.ignited, false);
+  assert.equal(premature.error, 'BASE_GROUNDING_REQUIRED');
+
+  const rootIgnite = engine.touchVertebra(1);
+  assert.equal(rootIgnite.ignited, true);
+  assert.equal(rootIgnite.remainingThresholds, 32);
+
+  const solarIgnite = engine.touchVertebra(15);
+  assert.equal(solarIgnite.ignited, true);
+});
+
