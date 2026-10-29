@@ -18,8 +18,6 @@ import { TYPOGRAPHY } from '../../theme/typography';
 import { HapticService } from '../../services/haptics';
 import {
   routineService,
-  DincharyaArchetype,
-  ARCHETYPES,
   RoutineTimelineItem,
 } from '../../services/routineService';
 import { notificationService } from '../../services/notificationService';
@@ -30,9 +28,11 @@ import {
   aiZenService,
   ENERGY_LEAK_OPTIONS,
   EnergyLeakId,
+  CurrentRealityProfile,
+  TargetStanceProfile,
 } from '../../services/aiZenService';
 
-export const ONBOARDING_DONE_KEY = '@hybrid_monk_onboarded_v1';
+export const ONBOARDING_DONE_KEY = '@hybrid_monk_onboarded_v2';
 
 interface Props {
   onComplete: () => void;
@@ -56,105 +56,33 @@ export const resetOnboarding = async (): Promise<void> => {
   }
 };
 
-interface PopularRoutinePreset {
-  id: string;
-  title: string;
-  subtitle: string;
-  tag: string;
-  hour: number;
-  minute: number;
-  endHour: number;
-  endMinute: number;
-  icon: string;
-}
-
-const POPULAR_PRESETS: PopularRoutinePreset[] = [
-  {
-    id: 'preset_gym',
-    title: 'Physical Workout & Mobility',
-    subtitle: 'Strength & Cardio • High-End Dopamine Calibration',
-    tag: 'FITNESS',
-    hour: 7,
-    minute: 0,
-    endHour: 8,
-    endMinute: 0,
-    icon: '🏋️',
-  },
-  {
-    id: 'preset_lunch',
-    title: 'Mindful Nutrition & Sunlight',
-    subtitle: 'Nourishment Threshold • Screen-Free Eating & Sunlight',
-    tag: 'NUTRITION',
-    hour: 12,
-    minute: 30,
-    endHour: 13,
-    endMinute: 15,
-    icon: '🥗',
-  },
-  {
-    id: 'preset_walk',
-    title: 'Midday Sunlight Walk',
-    subtitle: 'Optical Flow & Circadian Reset • Drop Mental Fatigue',
-    tag: 'MOVEMENT',
-    hour: 14,
-    minute: 0,
-    endHour: 14,
-    endMinute: 30,
-    icon: '🚶',
-  },
-  {
-    id: 'preset_reading',
-    title: 'Evening Deep Reading & Synthesis',
-    subtitle: 'Analog Wisdom • Cognitive Deep Dive Before Bed',
-    tag: 'STUDY',
-    hour: 20,
-    minute: 30,
-    endHour: 21,
-    endMinute: 15,
-    icon: '📖',
-  },
-  {
-    id: 'preset_family',
-    title: 'Family Presence Blackout',
-    subtitle: 'Zero Device Rule • Unconditional Connection & Conversation',
-    tag: 'PRESENCE',
-    hour: 19,
-    minute: 0,
-    endHour: 20,
-    endMinute: 0,
-    icon: '🏡',
-  },
-];
-
 export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 }) => {
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(initialStep);
 
-  // Step 1: AI Energy Diagnostic & Archetype (Jira DEV-99)
-  const [selectedLeak, setSelectedLeak] = useState<EnergyLeakId>('dopamine_feeds');
-  const [selectedArch, setSelectedArch] = useState<DincharyaArchetype>('builder');
-
-  // Step 2: Circadian State (The Solar Arc)
-  const [wakeHour, setWakeHour] = useState(5);
-  const [wakeMin, setWakeMin] = useState(30);
-  const [wakeMission, setWakeMission] = useState<'walk' | 'shake' | 'photo'>('walk');
-  const [sleepHour, setSleepHour] = useState(22);
-  const [sleepMin, setSleepMin] = useState(0);
-
-  // Step 2/3: Day Planning State
-  const [customItems, setCustomItems] = useState<RoutineTimelineItem[]>([]);
-  const [enabledItemIds, setEnabledItemIds] = useState<string[]>([
-    'wake_alarm',
-    'dawn_breath',
-    'protection_window',
-    'midday_stop',
-    'evening_transition',
-    'sleep_sanctum',
+  // Step 1: Multi-Select Attention Leaks (DEV-99 & DEV-100)
+  const [selectedLeaks, setSelectedLeaks] = useState<EnergyLeakId[]>([
+    'dopamine_feeds',
+    'morning_inertia',
   ]);
 
-  // Step 3: 33 Spine Initiation State
-  const [isVertebra01Ignited, setIsVertebra01Ignited] = useState<boolean>(false);
+  // Step 2: The Dial of Truth (Current Reality vs Target Stance)
+  const [currentWakeHour, setCurrentWakeHour] = useState(8);
+  const [currentWakeMin, setCurrentWakeMin] = useState(15);
+  const [currentSleepHour, setCurrentSleepHour] = useState(1);
+  const [currentSleepMin, setCurrentSleepMin] = useState(15);
+  const [currentFocusHours, setCurrentFocusHours] = useState(1.0);
 
-  // Step 4: Hardware Arming & Resonant Decay Test (Jira DEV-98)
+  const [targetWakeHour, setTargetWakeHour] = useState(5);
+  const [targetWakeMin, setTargetWakeMin] = useState(30);
+  const [targetSleepHour, setTargetSleepHour] = useState(22);
+  const [targetSleepMin, setTargetSleepMin] = useState(0);
+  const [targetFocusHours, setTargetFocusHours] = useState(4.0);
+
+  // Step 3: Generated Editable 24/7 Dincharya (River Stones in a Zen Garden)
+  const [dincharyaItems, setDincharyaItems] = useState<RoutineTimelineItem[]>([]);
+  const [isDincharyaGenerated, setIsDincharyaGenerated] = useState(false);
+
+  // Step 4: Hardware as Spirit & Resonant Decay (DEV-98 & DEV-100)
   const [isHapticDecayActive, setIsHapticDecayActive] = useState<boolean>(false);
   const [decayPhase, setDecayPhase] = useState<'idle' | 'striking' | 'decaying' | 'silence'>('idle');
   const [notifPermissionGranted, setNotifPermissionGranted] = useState<boolean>(false);
@@ -171,7 +99,7 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
   const [customEndHour, setCustomEndHour] = useState(16);
   const [customEndMin, setCustomEndMin] = useState(0);
 
-  // Check initial permissions on mount
+  // Permissions check on mount
   useEffect(() => {
     notificationService.checkPermissions().then((granted) => {
       setNotifPermissionGranted(granted);
@@ -180,116 +108,88 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
     setMotionPermissionGranted(motionAvailable);
   }, []);
 
-  // Handle AI Leak Diagnostic selection
-  const handleSelectLeak = (leakId: EnergyLeakId) => {
-    HapticService.selection();
-    setSelectedLeak(leakId);
-  };
-
-  // Update circadian defaults when archetype changes
-  const handleSelectArchetype = (arch: DincharyaArchetype) => {
-    HapticService.selection();
-    setSelectedArch(arch);
-
-    if (arch === 'builder') {
-      setWakeHour(5);
-      setWakeMin(30);
-      setSleepHour(22);
-      setSleepMin(0);
-      setWakeMission('walk');
-    } else if (arch === 'student') {
-      setWakeHour(6);
-      setWakeMin(0);
-      setSleepHour(22);
-      setSleepMin(30);
-      setWakeMission('shake');
-    } else if (arch === 'parent') {
-      setWakeHour(5);
-      setWakeMin(45);
-      setSleepHour(22);
-      setSleepMin(0);
-      setWakeMission('walk');
-    } else {
-      setWakeHour(6);
-      setWakeMin(30);
-      setSleepHour(23);
-      setSleepMin(0);
-      setWakeMission('walk');
+  // Generate initial Dincharya when transitioning to Step 3
+  useEffect(() => {
+    if (currentStep === 3 && !isDincharyaGenerated) {
+      const generated = aiZenService.generateAdaptiveDincharya(
+        {
+          wakeTime: { hour: targetWakeHour, minute: targetWakeMin },
+          sleepTime: { hour: targetSleepHour, minute: targetSleepMin },
+          dailyDeepWorkHours: targetFocusHours,
+        },
+        selectedLeaks
+      );
+      setDincharyaItems(generated);
+      setIsDincharyaGenerated(true);
     }
+  }, [currentStep, isDincharyaGenerated, targetWakeHour, targetWakeMin, targetSleepHour, targetSleepMin, targetFocusHours, selectedLeaks]);
+
+  // Toggle Attention Leak Conduit (Multi-Select with Kinetic Haptics)
+  const handleToggleLeak = (leakId: EnergyLeakId) => {
+    HapticService.heavyImpact();
+    setSelectedLeaks((prev) => {
+      if (prev.includes(leakId)) {
+        return prev.filter((id) => id !== leakId);
+      } else {
+        return [...prev, leakId];
+      }
+    });
   };
 
-  // Stepper adjustments for wake and sleep times
-  const adjustWakeTime = (deltaMinutes: number) => {
+  // Stepper adjustments for Current Reality
+  const adjustCurrentWake = (delta: number) => {
+    HapticService.selection();
+    let total = currentWakeHour * 60 + currentWakeMin + delta;
+    if (total < 0) total += 24 * 60;
+    total = total % (24 * 60);
+    setCurrentWakeHour(Math.floor(total / 60));
+    setCurrentWakeMin(total % 60);
+  };
+
+  const adjustCurrentSleep = (delta: number) => {
+    HapticService.selection();
+    let total = currentSleepHour * 60 + currentSleepMin + delta;
+    if (total < 0) total += 24 * 60;
+    total = total % (24 * 60);
+    setCurrentSleepHour(Math.floor(total / 60));
+    setCurrentSleepMin(total % 60);
+  };
+
+  // Stepper adjustments for Target Stance
+  const adjustTargetWake = (delta: number) => {
     HapticService.lightImpact();
-    let totalMins = wakeHour * 60 + wakeMin + deltaMinutes;
-    if (totalMins < 0) totalMins += 24 * 60;
-    totalMins = totalMins % (24 * 60);
-    setWakeHour(Math.floor(totalMins / 60));
-    setWakeMin(totalMins % 60);
+    let total = targetWakeHour * 60 + targetWakeMin + delta;
+    if (total < 0) total += 24 * 60;
+    total = total % (24 * 60);
+    setTargetWakeHour(Math.floor(total / 60));
+    setTargetWakeMin(total % 60);
+    setIsDincharyaGenerated(false); // trigger re-generation
   };
 
-  const adjustSleepTime = (deltaMinutes: number) => {
+  const adjustTargetSleep = (delta: number) => {
     HapticService.lightImpact();
-    let totalMins = sleepHour * 60 + sleepMin + deltaMinutes;
-    if (totalMins < 0) totalMins += 24 * 60;
-    totalMins = totalMins % (24 * 60);
-    setSleepHour(Math.floor(totalMins / 60));
-    setSleepMin(totalMins % 60);
+    let total = targetSleepHour * 60 + targetSleepMin + delta;
+    if (total < 0) total += 24 * 60;
+    total = total % (24 * 60);
+    setTargetSleepHour(Math.floor(total / 60));
+    setTargetSleepMin(total % 60);
+    setIsDincharyaGenerated(false);
   };
 
-  // Calculate sleep window duration
-  const calculateSleepDuration = (): { hours: number; minutes: number } => {
-    const sleepTotalMins = sleepHour * 60 + sleepMin;
-    let wakeTotalMins = wakeHour * 60 + wakeMin;
-    if (wakeTotalMins <= sleepTotalMins) {
-      wakeTotalMins += 24 * 60;
-    }
-    const diff = wakeTotalMins - sleepTotalMins;
-    return {
-      hours: Math.floor(diff / 60),
-      minutes: diff % 60,
-    };
-  };
-
-  // Toggle routine items
+  // Toggle routine item in Dincharya
   const handleToggleItem = (id: string) => {
     HapticService.selection();
-    setEnabledItemIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    setDincharyaItems((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, enabled: !item.enabled } : item
+      )
     );
   };
 
-  // Quick add popular preset
-  const handleAddPreset = (preset: PopularRoutinePreset) => {
-    HapticService.mediumImpact();
-    const id = `custom_${Date.now()}_${preset.id}`;
-    const timeDisplay = routineService.formatTimeDisplay(
-      preset.hour,
-      preset.minute,
-      preset.endHour,
-      preset.endMinute
-    );
-
-    const newItem: RoutineTimelineItem = {
-      id,
-      type: 'custom',
-      title: preset.title,
-      subtitle: preset.subtitle,
-      tag: preset.tag,
-      timeDisplay,
-      hour: preset.hour,
-      minute: preset.minute,
-      endHour: preset.endHour,
-      endMinute: preset.endMinute,
-      enabled: true,
-      notificationEnabled: true,
-      isCustom: true,
-      notificationTitle: `⏱️ ${preset.title.toUpperCase()}`,
-      notificationBody: `Time for ${preset.title}. Stay centered in your sovereign rhythm.`,
-    };
-
-    setCustomItems((prev) => [...prev, newItem]);
-    setEnabledItemIds((prev) => [...prev, id]);
+  // Remove a custom or editable routine item
+  const handleRemoveItem = (id: string) => {
+    HapticService.lightImpact();
+    setDincharyaItems((prev) => prev.filter((it) => it.id !== id));
   };
 
   // Add custom routine item from modal form
@@ -323,24 +223,10 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
       notificationBody: `Time for ${customTitle.trim()}. Stay anchored in presence.`,
     };
 
-    setCustomItems((prev) => [...prev, newItem]);
-    setEnabledItemIds((prev) => [...prev, id]);
+    setDincharyaItems((prev) => [...prev, newItem]);
     setIsAddModalOpen(false);
     setCustomTitle('');
     setCustomSubtitle('');
-  };
-
-  // Remove a custom routine item
-  const handleRemoveCustomItem = (id: string) => {
-    HapticService.lightImpact();
-    setCustomItems((prev) => prev.filter((it) => it.id !== id));
-    setEnabledItemIds((prev) => prev.filter((itId) => itId !== id));
-  };
-
-  // Step 3: Ignite Vertebra 01 (Coccyx/Root)
-  const handleTouchVertebra01 = async () => {
-    await HapticService.vertebralAscensionWave();
-    setIsVertebra01Ignited(true);
   };
 
   // Step 4: Test Resonant Decay to Pure Silence (Jira DEV-98)
@@ -379,52 +265,89 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
     }
   };
 
-  // Lock in routine and complete onboarding
-  const handleLockIn = async () => {
+  // Inscribe Sovereign Dincharya and complete onboarding
+  const handleInscribe = async () => {
     setIsLoading(true);
-    HapticService.heavyImpact();
+    await HapticService.resonantDecayToSilence();
 
     try {
-      // 1. Calibrate and save routine with custom items, wake time, sleep time, and archetype
-      await routineService.saveCalibratedRoutine({
-        archetype: selectedArch,
-        wakeHour,
-        wakeMinute: wakeMin,
-        wakeMission,
-        sleepHour,
-        sleepMinute: sleepMin,
-        customItems,
-        enabledItemIds,
+      const currentReality: CurrentRealityProfile = {
+        wakeTime: { hour: currentWakeHour, minute: currentWakeMin },
+        sleepTime: { hour: currentSleepHour, minute: currentSleepMin },
+        dailyDeepWorkHours: currentFocusHours,
+      };
+
+      const targetStance: TargetStanceProfile = {
+        wakeTime: { hour: targetWakeHour, minute: targetWakeMin },
+        sleepTime: { hour: targetSleepHour, minute: targetSleepMin },
+        dailyDeepWorkHours: targetFocusHours,
+      };
+
+      const deltaLedger = aiZenService.computeDelta(currentReality, targetStance);
+      const compound = aiZenService.generateCompoundDiagnosis(selectedLeaks);
+
+      // 1. Save Full Onboarding Profile (DEV-100)
+      await aiZenService.saveOnboardingProfile({
+        selectedLeaks,
+        currentReality,
+        targetStance,
+        deltaLedger,
+        compoundDiagnosis: compound.diagnosisText,
+        curatedArchetypes: compound.notificationArchetypes,
+        calibratedAt: new Date().toISOString(),
       });
 
-      // 2. Persist AI baseline diagnostic profile (DEV-99)
-      await aiZenService.saveBaselineDiagnostic(selectedLeak);
+      // 2. Persist calibrated Dincharya items into routine service
+      await routineService.saveCalibratedRoutine({
+        archetype: 'builder',
+        wakeHour: targetWakeHour,
+        wakeMinute: targetWakeMin,
+        wakeMission: 'walk',
+        sleepHour: targetSleepHour,
+        sleepMinute: targetSleepMin,
+        customItems: dincharyaItems.filter((i) => i.isCustom),
+        enabledItemIds: dincharyaItems.filter((i) => i.enabled).map((i) => i.id),
+      });
 
-      // 3. Mark onboarding completed in AsyncStorage
+      // 3. Mark Onboarding completed in AsyncStorage
       await AsyncStorage.setItem(ONBOARDING_DONE_KEY, 'true');
 
-      // 4. Queue profile setup to Supabase outbox if user exists
+      // 4. Queue profile sync to Supabase outbox if user exists
       if (isSupabaseConfigured) {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           await syncOutbox.enqueue('profiles', {
             id: user.id,
-            monk_title: selectedArch.toUpperCase(),
-            energy_leak: selectedLeak,
+            monk_title: 'SOVEREIGN_INITIATE',
+            energy_leaks: selectedLeaks,
+            reclaimed_hours_annual: deltaLedger.annualConsciousHoursReclaimed,
             updated_at: new Date().toISOString(),
           });
         }
       }
     } catch (e) {
-      console.warn('[Onboarding] Error applying calibrated routine:', e);
+      console.warn('[Onboarding] Error inscribing routine:', e);
     } finally {
       setIsLoading(false);
       onComplete();
     }
   };
 
-  const sleepDuration = calculateSleepDuration();
-  const currentLeakOption = aiZenService.getLeakOption(selectedLeak);
+  // Compute live Delta Ledger & Compound Diagnosis
+  const currentReality: CurrentRealityProfile = {
+    wakeTime: { hour: currentWakeHour, minute: currentWakeMin },
+    sleepTime: { hour: currentSleepHour, minute: currentSleepMin },
+    dailyDeepWorkHours: currentFocusHours,
+  };
+
+  const targetStance: TargetStanceProfile = {
+    wakeTime: { hour: targetWakeHour, minute: targetWakeMin },
+    sleepTime: { hour: targetSleepHour, minute: targetSleepMin },
+    dailyDeepWorkHours: targetFocusHours,
+  };
+
+  const delta = aiZenService.computeDelta(currentReality, targetStance);
+  const compound = aiZenService.generateCompoundDiagnosis(selectedLeaks);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -451,12 +374,12 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
         <Text style={styles.stepLabel}>
           STEP {currentStep} OF 4 •{' '}
           {currentStep === 1
-            ? 'THE SOVEREIGN THRESHOLD'
+            ? 'THE FRACTURED RESERVOIR (DEV-99)'
             : currentStep === 2
-            ? 'THE SOLAR ARC (DINCHARYA)'
+            ? 'THE DIAL OF TRUTH & DELTA BRIDGE'
             : currentStep === 3
-            ? 'THE 33 LIVING SPINE (SADHANA)'
-            : 'HARDWARE AS SPIRIT'}
+            ? 'THE 24/7 DINCHARYA'
+            : 'THE THREE SEALS OF ARMOR (DEV-98)'}
         </Text>
       </View>
 
@@ -464,7 +387,7 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* ==================== STEP 1: AI ENERGY DIAGNOSTIC & ARCHETYPE (DEV-99) ==================== */}
+        {/* ==================== STEP 1: MULTI-SELECT LEAKS & COMPOUND BODHIDHARMA MIRROR ==================== */}
         {currentStep === 1 && (
           <View>
             <View style={styles.header}>
@@ -472,32 +395,39 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
               <Text style={styles.title}>The world is loud.</Text>
               <Text style={styles.titleEm}>Where does your life force bleed?</Text>
               <Text style={styles.subtitle}>
-                Before setting a routine, acknowledge the leak. Shaniwar places a mirror before you,
-                not a cage.
+                Tap every conduit where your vitality drains. Shaniwar places an unsparing mirror before
+                you, not a cage.
               </Text>
             </View>
 
-            {/* AI Energy Diagnostic Leak Options */}
+            {/* Multi-Select Energy Conduits Grid */}
             <View style={styles.sectionHeaderBox}>
-              <Text style={styles.sectionHeading}>IDENTIFY YOUR PRIMARY ATTENTION LEAK</Text>
-              <Text style={styles.sectionSub}>Select the pattern draining your life force:</Text>
+              <Text style={styles.sectionHeading}>SELECT ALL ACTIVE CONDUITS ({selectedLeaks.length} SELECTED)</Text>
+              <Text style={styles.sectionSub}>Touch to acknowledge the leakage of consciousness:</Text>
             </View>
 
             <View style={styles.leakGrid}>
               {ENERGY_LEAK_OPTIONS.map((leak) => {
-                const isSelected = selectedLeak === leak.id;
+                const isSelected = selectedLeaks.includes(leak.id);
                 return (
                   <TouchableOpacity
                     key={leak.id}
                     style={[styles.leakCard, isSelected && styles.leakCardSelected]}
-                    onPress={() => handleSelectLeak(leak.id)}
+                    onPress={() => handleToggleLeak(leak.id)}
                     activeOpacity={0.85}
                   >
                     <View style={styles.leakTopRow}>
                       <Text style={styles.leakIcon}>{leak.icon}</Text>
-                      <Text style={[styles.leakLabel, isSelected && styles.leakLabelSelected]}>
-                        {leak.label}
-                      </Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.leakLabel, isSelected && styles.leakLabelSelected]}>
+                          {leak.label}
+                        </Text>
+                      </View>
+                      <View style={[styles.checkCircle, isSelected && styles.checkCircleSelected]}>
+                        <Text style={[styles.checkMark, isSelected && styles.checkMarkSelected]}>
+                          {isSelected ? '✓' : ''}
+                        </Text>
+                      </View>
                     </View>
                     <Text style={styles.leakTagline}>{leak.tagline}</Text>
                   </TouchableOpacity>
@@ -505,280 +435,191 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
               })}
             </View>
 
-            {/* Bodhidharma Zen Intelligence Mirror Card (DEV-99) */}
+            {/* Live Compound Bodhidharma Zen Mirror Card */}
             <View style={styles.zenMirrorCard}>
               <View style={styles.zenMirrorBadgeRow}>
-                <Text style={styles.zenMirrorBadge}>ZEN INTELLIGENCE • BODHIDHARMA MIRROR</Text>
-                <Text style={styles.zenMirrorFocus}>{currentLeakOption.priorityFocus}</Text>
+                <Text style={styles.zenMirrorBadge}>COMPOUND BODHIDHARMA SYNTHESIS</Text>
+                <Text style={styles.zenMirrorFocus}>{compound.priorityFocus}</Text>
               </View>
               <Text style={styles.zenMirrorText}>
-                "{currentLeakOption.bodhidharmaDiagnosis}"
+                "{compound.diagnosisText}"
               </Text>
-            </View>
-
-            {/* Base Life Archetype Selector */}
-            <View style={[styles.sectionHeaderBox, { marginTop: 24 }]}>
-              <Text style={styles.sectionHeading}>CALIBRATE LIFE ARCHETYPE</Text>
-              <Text style={styles.sectionSub}>Choose your initial circadian baseline:</Text>
-            </View>
-
-            <View style={styles.archetypeGrid}>
-              {ARCHETYPES.map((arch) => {
-                const isSelected = selectedArch === arch.id;
-                const defaultWakeTime =
-                  arch.id === 'builder'
-                    ? '05:30 AM'
-                    : arch.id === 'student'
-                    ? '06:00 AM'
-                    : arch.id === 'parent'
-                    ? '05:45 AM'
-                    : '06:30 AM';
-
-                return (
-                  <TouchableOpacity
-                    key={arch.id}
-                    style={[styles.archCard, isSelected && styles.archCardSelected]}
-                    onPress={() => handleSelectArchetype(arch.id)}
-                    activeOpacity={0.85}
-                  >
-                    <View style={styles.archIconContainer}>
-                      <Text style={styles.archIcon}>{arch.icon}</Text>
-                    </View>
-                    <View style={styles.archContent}>
-                      <View style={styles.archTopRow}>
-                        <Text style={[styles.archName, isSelected && styles.archNameSelected]}>
-                          {arch.name}
-                        </Text>
-                        <Text style={[styles.archTime, isSelected && styles.archTimeSelected]}>
-                          {defaultWakeTime}
-                        </Text>
-                      </View>
-                      <Text style={styles.archTagline}>{arch.tagline}</Text>
-                      <Text style={styles.archDescription} numberOfLines={2}>
-                        {arch.description}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
             </View>
           </View>
         )}
 
-        {/* ==================== STEP 2: THE SOLAR ARC (DINCHARYA) ==================== */}
+        {/* ==================== STEP 2: CURRENT REALITY VS TARGET STANCE & DELTA BRIDGE ==================== */}
         {currentStep === 2 && (
           <View>
             <View style={styles.header}>
-              <Text style={styles.eyebrow}>THE CROSS OF EXISTENCE • HORIZONTAL AXIS</Text>
-              <Text style={styles.title}>The Solar Arc</Text>
-              <Text style={styles.titleEm}>Planetary Rhythm.</Text>
+              <Text style={styles.eyebrow}>THE DIAL OF TRUTH</Text>
+              <Text style={styles.title}>Where You Stand.</Text>
+              <Text style={styles.titleEm}>Where You Will Plant Your Flag.</Text>
               <Text style={styles.subtitle}>
-                The sun rises, prana surges, twilight settles, the body restores. Your 24-hour day is
-                an unbroken arc of light and blood.
+                We do not cross from chaos into sovereignty with positive thinking. We measure the
+                exact territory lost to reclaim it.
               </Text>
             </View>
 
-            {/* Wake Time Calibration */}
-            <View style={styles.cardBox}>
-              <View style={styles.cardBoxHeader}>
-                <Text style={styles.cardBoxTag}>CORE ANCHOR 01 • MORNING IGNITION</Text>
-                <Text style={styles.cardBoxTitle}>Wake Alarm Time</Text>
+            {/* Section A: The Unconscious Drift (Current Reality) */}
+            <View style={styles.realityBox}>
+              <View style={styles.realityHeader}>
+                <Text style={styles.realityTag}>CURRENT REALITY • THE DRIFT</Text>
+                <Text style={styles.realityTitle}>When Does Your Day Actually Collapse?</Text>
               </View>
 
-              <View style={styles.clockDisplayRow}>
-                <TouchableOpacity
-                  style={styles.stepperBtn}
-                  onPress={() => adjustWakeTime(-15)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.stepperBtnText}>- 15m</Text>
-                </TouchableOpacity>
-
-                <View style={styles.clockFace}>
-                  <Text style={styles.clockTime}>
-                    {routineService.formatTimeDisplay(wakeHour, wakeMin)}
+              <View style={styles.clockDuoRow}>
+                {/* Current Wake */}
+                <View style={styles.clockHalfCard}>
+                  <Text style={styles.clockMiniTag}>EYES ACTUALLY OPEN</Text>
+                  <Text style={styles.clockMiniTime}>
+                    {routineService.formatTimeDisplay(currentWakeHour, currentWakeMin)}
                   </Text>
-                  <Text style={styles.clockSub}>COREMOTION • ZERO SNOOZE</Text>
+                  <View style={styles.microStepperRow}>
+                    <TouchableOpacity
+                      style={styles.microBtn}
+                      onPress={() => adjustCurrentWake(-15)}
+                    >
+                      <Text style={styles.microBtnText}>- 15m</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.microBtn}
+                      onPress={() => adjustCurrentWake(15)}
+                    >
+                      <Text style={styles.microBtnText}>+ 15m</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
 
-                <TouchableOpacity
-                  style={styles.stepperBtn}
-                  onPress={() => adjustWakeTime(15)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.stepperBtnText}>+ 15m</Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* Wake Time Quick Presets */}
-              <View style={styles.presetChipsRow}>
-                {[
-                  { h: 5, m: 0, label: '05:00 AM' },
-                  { h: 5, m: 30, label: '05:30 AM' },
-                  { h: 5, m: 45, label: '05:45 AM' },
-                  { h: 6, m: 0, label: '06:00 AM' },
-                  { h: 6, m: 30, label: '06:30 AM' },
-                ].map((preset) => {
-                  const isSel = wakeHour === preset.h && wakeMin === preset.m;
-                  return (
+                {/* Current Bedtime */}
+                <View style={styles.clockHalfCard}>
+                  <Text style={styles.clockMiniTag}>PHONE FINALLY DOWN</Text>
+                  <Text style={styles.clockMiniTime}>
+                    {routineService.formatTimeDisplay(currentSleepHour, currentSleepMin)}
+                  </Text>
+                  <View style={styles.microStepperRow}>
                     <TouchableOpacity
-                      key={preset.label}
-                      style={[styles.chip, isSel && styles.chipSelected]}
-                      onPress={() => {
-                        HapticService.selection();
-                        setWakeHour(preset.h);
-                        setWakeMin(preset.m);
-                      }}
+                      style={styles.microBtn}
+                      onPress={() => adjustCurrentSleep(-15)}
                     >
-                      <Text style={[styles.chipText, isSel && styles.chipTextSelected]}>
-                        {preset.label}
-                      </Text>
+                      <Text style={styles.microBtnText}>- 15m</Text>
                     </TouchableOpacity>
-                  );
-                })}
-              </View>
-
-              {/* Wake Verification Mission Selector */}
-              <View style={styles.missionContainer}>
-                <Text style={styles.missionLabel}>WAKE VERIFICATION MISSION</Text>
-                <View style={styles.missionChipsRow}>
-                  {[
-                    { type: 'walk', label: '🚶 20-Step Walk (CoreMotion)' },
-                    { type: 'shake', label: '📳 25 Shakes' },
-                    { type: 'photo', label: '📸 Bathroom Sink Photo' },
-                  ].map((m) => {
-                    const isSel = wakeMission === m.type;
-                    return (
-                      <TouchableOpacity
-                        key={m.type}
-                        style={[styles.missionChip, isSel && styles.missionChipSelected]}
-                        onPress={() => {
-                          HapticService.selection();
-                          setWakeMission(m.type as any);
-                        }}
-                      >
-                        <Text style={[styles.missionChipText, isSel && styles.missionChipTextSelected]}>
-                          {m.label}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
+                    <TouchableOpacity
+                      style={styles.microBtn}
+                      onPress={() => adjustCurrentSleep(15)}
+                    >
+                      <Text style={styles.microBtnText}>+ 15m</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </View>
             </View>
 
-            {/* Sleep Sanctum Calibration */}
-            <View style={styles.cardBox}>
-              <View style={styles.cardBoxHeader}>
-                <Text style={styles.cardBoxTag}>CORE ANCHOR 02 • RESTORATION</Text>
-                <Text style={styles.cardBoxTitle}>Sleep Sanctum Time</Text>
+            {/* Section B: The Sovereign Target */}
+            <View style={styles.targetBox}>
+              <View style={styles.targetHeader}>
+                <Text style={styles.targetTag}>THE SOVEREIGN TARGET • THE STANCE</Text>
+                <Text style={styles.targetTitle}>Where Will You Plant Your Flag?</Text>
               </View>
 
-              <View style={styles.clockDisplayRow}>
-                <TouchableOpacity
-                  style={styles.stepperBtn}
-                  onPress={() => adjustSleepTime(-15)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.stepperBtnText}>- 15m</Text>
-                </TouchableOpacity>
-
-                <View style={styles.clockFace}>
-                  <Text style={styles.clockTime}>
-                    {routineService.formatTimeDisplay(sleepHour, sleepMin)}
+              <View style={styles.clockDuoRow}>
+                {/* Target Wake */}
+                <View style={[styles.clockHalfCard, styles.targetClockCard]}>
+                  <Text style={[styles.clockMiniTag, { color: '#FFB800' }]}>DAWN IGNITION</Text>
+                  <Text style={[styles.clockMiniTime, { color: '#FFB800' }]}>
+                    {routineService.formatTimeDisplay(targetWakeHour, targetWakeMin)}
                   </Text>
-                  <Text style={styles.clockSub}>DIGITAL BLACKOUT</Text>
+                  <View style={styles.microStepperRow}>
+                    <TouchableOpacity
+                      style={[styles.microBtn, styles.targetMicroBtn]}
+                      onPress={() => adjustTargetWake(-15)}
+                    >
+                      <Text style={[styles.microBtnText, { color: '#FFB800' }]}>- 15m</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.microBtn, styles.targetMicroBtn]}
+                      onPress={() => adjustTargetWake(15)}
+                    >
+                      <Text style={[styles.microBtnText, { color: '#FFB800' }]}>+ 15m</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
 
-                <TouchableOpacity
-                  style={styles.stepperBtn}
-                  onPress={() => adjustSleepTime(15)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.stepperBtnText}>+ 15m</Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* Sleep Quick Presets */}
-              <View style={styles.presetChipsRow}>
-                {[
-                  { h: 21, m: 30, label: '09:30 PM' },
-                  { h: 22, m: 0, label: '10:00 PM' },
-                  { h: 22, m: 30, label: '10:30 PM' },
-                  { h: 23, m: 0, label: '11:00 PM' },
-                  { h: 23, m: 30, label: '11:30 PM' },
-                ].map((preset) => {
-                  const isSel = sleepHour === preset.h && sleepMin === preset.m;
-                  return (
+                {/* Target Sleep */}
+                <View style={[styles.clockHalfCard, styles.targetClockCard]}>
+                  <Text style={[styles.clockMiniTag, { color: '#FFB800' }]}>DIGITAL BLACKOUT</Text>
+                  <Text style={[styles.clockMiniTime, { color: '#FFB800' }]}>
+                    {routineService.formatTimeDisplay(targetSleepHour, targetSleepMin)}
+                  </Text>
+                  <View style={styles.microStepperRow}>
                     <TouchableOpacity
-                      key={preset.label}
-                      style={[styles.chip, isSel && styles.chipSelected]}
-                      onPress={() => {
-                        HapticService.selection();
-                        setSleepHour(preset.h);
-                        setSleepMin(preset.m);
-                      }}
+                      style={[styles.microBtn, styles.targetMicroBtn]}
+                      onPress={() => adjustTargetSleep(-15)}
                     >
-                      <Text style={[styles.chipText, isSel && styles.chipTextSelected]}>
-                        {preset.label}
-                      </Text>
+                      <Text style={[styles.microBtnText, { color: '#FFB800' }]}>- 15m</Text>
                     </TouchableOpacity>
-                  );
-                })}
+                    <TouchableOpacity
+                      style={[styles.microBtn, styles.targetMicroBtn]}
+                      onPress={() => adjustTargetSleep(15)}
+                    >
+                      <Text style={[styles.microBtnText, { color: '#FFB800' }]}>+ 15m</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
               </View>
             </View>
 
-            {/* Sleep Window Readout Banner */}
-            <View style={styles.readoutCard}>
-              <Text style={styles.readoutIcon}>🌙</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.readoutTitle}>
-                  Restoration Window: {sleepDuration.hours}h {sleepDuration.minutes > 0 ? `${sleepDuration.minutes}m` : ''}
-                </Text>
-                <Text style={styles.readoutDesc}>
-                  Provides optimal slow-wave NREM and REM brain restoration between blackout and morning
-                  ignition.
+            {/* Section C: The Delta Bridge (The Ledger of Stolen Life) */}
+            <View style={styles.ledgerCard}>
+              <View style={styles.ledgerHeader}>
+                <Text style={styles.ledgerBadge}>THE DELTA BRIDGE • LEDGER OF STOLEN LIFE</Text>
+                <Text style={styles.ledgerHeading}>The Cost of Unconscious Drift</Text>
+              </View>
+
+              <View style={styles.ledgerRow}>
+                <Text style={styles.ledgerLabel}>Morning Daylight Lost to Inertia:</Text>
+                <Text style={styles.ledgerValue}>{delta.lostMorningHours} hrs / day</Text>
+              </View>
+              <View style={styles.ledgerRow}>
+                <Text style={styles.ledgerLabel}>Twilight Surrendered to Blue Light:</Text>
+                <Text style={styles.ledgerValue}>{delta.lostNightHours} hrs / night</Text>
+              </View>
+              <View style={[styles.ledgerRow, styles.ledgerRowTotal]}>
+                <Text style={styles.ledgerLabelTotal}>Total Sovereign Territory Lost:</Text>
+                <Text style={styles.ledgerValueTotal}>{delta.totalDailySurrenderedHours} HOURS / DAY</Text>
+              </View>
+
+              <View style={styles.ledgerCallout}>
+                <Text style={styles.ledgerCalloutText}>
+                  In one year, you surrender{' '}
+                  <Text style={{ color: '#E84545', fontWeight: '800' }}>
+                    {delta.annualWakingDaysLost} FULL WAKING DAYS
+                  </Text>{' '}
+                  to the machine. By planting your flag, you reclaim{' '}
+                  <Text style={{ color: '#39D98A', fontWeight: '800' }}>
+                    +{delta.annualConsciousHoursReclaimed} hours
+                  </Text>{' '}
+                  of conscious creation.
                 </Text>
               </View>
             </View>
+          </View>
+        )}
 
-            {/* Day Arc Timeline Preview & Custom Add */}
-            <View style={[styles.sectionHeaderBox, { marginTop: 24 }]}>
-              <Text style={styles.sectionHeading}>INDIVIDUAL TIMELINE CUSTOMIZATION</Text>
-              <Text style={styles.sectionSub}>Quickly attach daily blocks to your solar arc:</Text>
+        {/* ==================== STEP 3: THE 24/7 LIVING DINCHARYA (RIVER STONES) ==================== */}
+        {currentStep === 3 && (
+          <View>
+            <View style={styles.header}>
+              <Text style={styles.eyebrow}>RIVER STONES IN A ZEN GARDEN</Text>
+              <Text style={styles.title}>Your 24/7 Dincharya.</Text>
+              <Text style={styles.titleEm}>Editable Sovereign Architecture.</Text>
+              <Text style={styles.subtitle}>
+                Generated to bridge your exact delta. Every river stone is editable to fit your life.
+                Adjust the timeline now—then we follow it religiously.
+              </Text>
             </View>
 
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.popularList}>
-              {POPULAR_PRESETS.map((preset) => {
-                const isAlreadyAdded = customItems.some((ci) => ci.title === preset.title);
-                return (
-                  <TouchableOpacity
-                    key={preset.id}
-                    style={[styles.popularCard, isAlreadyAdded && styles.popularCardAdded]}
-                    onPress={() => !isAlreadyAdded && handleAddPreset(preset)}
-                    activeOpacity={0.8}
-                    disabled={isAlreadyAdded}
-                  >
-                    <Text style={styles.popularIcon}>{preset.icon}</Text>
-                    <Text style={styles.popularTitle} numberOfLines={1}>
-                      {preset.title}
-                    </Text>
-                    <Text style={styles.popularTime}>
-                      {routineService.formatTimeDisplay(
-                        preset.hour,
-                        preset.minute,
-                        preset.endHour,
-                        preset.endMinute
-                      )}
-                    </Text>
-                    <Text style={[styles.popularAction, isAlreadyAdded && { color: '#39D98A' }]}>
-                      {isAlreadyAdded ? 'Added ✓' : '+ Add to Day'}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-
+            {/* Add Custom Anchor Button */}
             <TouchableOpacity
               style={styles.addCustomBtn}
               onPress={() => {
@@ -787,232 +628,66 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
               }}
               activeOpacity={0.85}
             >
-              <Text style={styles.addCustomBtnText}>+ Add Custom Routine Block</Text>
+              <Text style={styles.addCustomBtnText}>+ Inscribe Custom Routine Stone</Text>
             </TouchableOpacity>
 
-            {/* Timeline Preview List */}
-            <View style={styles.timelinePreviewSection}>
-              {[
-                {
-                  id: 'wake_alarm',
-                  title: 'The Wake Alarm',
-                  tag: 'CORE ANCHOR',
-                  time: routineService.formatTimeDisplay(wakeHour, wakeMin),
-                  icon: '🔥',
-                  isLocked: true,
-                },
-                {
-                  id: 'dawn_breath',
-                  title: 'Dawn Kundalini Breath',
-                  tag: 'HYBRID MONK',
-                  time: routineService.formatTimeDisplay((wakeHour + 1) % 24, 0),
-                  icon: '⚡',
-                  isLocked: false,
-                },
-                {
-                  id: 'protection_window',
-                  title: 'Deep Work Protection Window',
-                  tag: 'CORE ANCHOR',
-                  time: '09:00 AM – 01:00 PM',
-                  icon: '🛡️',
-                  isLocked: false,
-                },
-                {
-                  id: 'midday_stop',
-                  title: 'Midday Osho STOP',
-                  tag: 'HYBRID MONK',
-                  time: '01:15 PM',
-                  icon: '🛑',
-                  isLocked: false,
-                },
-                {
-                  id: 'evening_transition',
-                  title: 'Evening Transition Threshold',
-                  tag: 'DECOMPRESSION',
-                  time: '06:30 PM',
-                  icon: '🌙',
-                  isLocked: false,
-                },
-                {
-                  id: 'sleep_sanctum',
-                  title: 'Sleep Sanctum',
-                  tag: 'RECOVERY',
-                  time: routineService.formatTimeDisplay(sleepHour, sleepMin),
-                  icon: '🌑',
-                  isLocked: true,
-                },
-              ].map((item) => {
-                const isEnabled = enabledItemIds.includes(item.id);
+            {/* Dincharya River Stones Timeline */}
+            <View style={styles.stonesList}>
+              {dincharyaItems.map((item) => {
+                const isCore = item.tag === 'CORE ANCHOR';
                 return (
-                  <View key={item.id} style={styles.timelineItemRow}>
-                    <Text style={styles.timelineItemIcon}>{item.icon}</Text>
-                    <View style={{ flex: 1 }}>
-                      <View style={styles.timelineItemTop}>
-                        <Text style={styles.timelineItemTitle}>{item.title}</Text>
-                        <Text style={styles.timelineItemTime}>{item.time}</Text>
+                  <View
+                    key={item.id}
+                    style={[styles.stoneCard, isCore && styles.stoneCardCore, !item.enabled && styles.stoneCardDisabled]}
+                  >
+                    <View style={styles.stoneTop}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.stoneTitle, isCore && { color: '#FFB800' }]}>
+                          {item.title}
+                        </Text>
+                        <Text style={styles.stoneSub}>{item.subtitle}</Text>
+                        <Text style={[styles.stoneTag, isCore && { color: '#FFB800' }]}>{item.tag}</Text>
                       </View>
-                      <Text style={styles.timelineItemTag}>{item.tag}</Text>
+                      <View style={styles.stoneRight}>
+                        <Text style={[styles.stoneTime, isCore && { color: '#FFB800' }]}>
+                          {item.timeDisplay}
+                        </Text>
+                        {!isCore ? (
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                            <Switch
+                              value={item.enabled}
+                              onValueChange={() => handleToggleItem(item.id)}
+                              trackColor={{ false: '#222', true: '#FFB800' }}
+                              thumbColor="#FFF"
+                            />
+                            {item.isCustom && (
+                              <TouchableOpacity onPress={() => handleRemoveItem(item.id)}>
+                                <Text style={{ fontSize: 13, color: '#888' }}>🗑️</Text>
+                              </TouchableOpacity>
+                            )}
+                          </View>
+                        ) : (
+                          <Text style={styles.stoneFixedPill}>IRON ANCHOR</Text>
+                        )}
+                      </View>
                     </View>
-                    {!item.isLocked && (
-                      <Switch
-                        value={isEnabled}
-                        onValueChange={() => handleToggleItem(item.id)}
-                        trackColor={{ false: '#222', true: '#FFB800' }}
-                        thumbColor="#FFF"
-                      />
-                    )}
                   </View>
                 );
               })}
-
-              {/* Added Custom Items List */}
-              {customItems.length > 0 && (
-                <View style={styles.customItemsSection}>
-                  <Text style={styles.customItemsHeader}>PERSONALIZED ROUTINE BLOCKS ({customItems.length})</Text>
-                  {customItems.map((item) => (
-                    <View key={item.id} style={styles.customItemRow}>
-                      <Text style={styles.customItemIcon}>⭐</Text>
-                      <View style={{ flex: 1 }}>
-                        <View style={styles.timelineItemTop}>
-                          <Text style={styles.customItemTitle}>{item.title}</Text>
-                          <Text style={styles.timelineItemTime}>{item.timeDisplay}</Text>
-                        </View>
-                        <Text style={styles.customItemSub}>{item.subtitle}</Text>
-                        <Text style={styles.timelineItemTag}>{item.tag}</Text>
-                      </View>
-                      <TouchableOpacity
-                        onPress={() => handleRemoveCustomItem(item.id)}
-                        style={styles.deleteCustomBtn}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      >
-                        <Text style={styles.deleteCustomText}>🗑️</Text>
-                      </TouchableOpacity>
-                    </View>
-                  ))}
-                </View>
-              )}
             </View>
           </View>
         )}
 
-        {/* ==================== STEP 3: THE 33 LIVING SPINE (SADHANA) ==================== */}
-        {currentStep === 3 && (
-          <View>
-            <View style={styles.header}>
-              <Text style={styles.eyebrow}>THE CROSS OF EXISTENCE • VERTICAL AXIS</Text>
-              <Text style={styles.title}>The 33 Living Spine</Text>
-              <Text style={styles.titleEm}>Awakened Consciousness.</Text>
-              <Text style={styles.subtitle}>
-                Your spine is your physical reality right now. 33 vertebrae of ascending awareness—from
-                earth grounding at the coccyx to pure sovereign witness (Sakshi) at the crown.
-              </Text>
-            </View>
-
-            {/* Vertebra 01 Interactive Initiation Card */}
-            <TouchableOpacity
-              style={[
-                styles.spineInitiationCard,
-                isVertebra01Ignited && styles.spineInitiationCardIgnited,
-              ]}
-              onPress={handleTouchVertebra01}
-              activeOpacity={0.85}
-            >
-              <View style={styles.spineInitiationHeader}>
-                <View
-                  style={[
-                    styles.spineNodePulse,
-                    isVertebra01Ignited && styles.spineNodePulseIgnited,
-                  ]}
-                >
-                  <Text style={styles.spineNodeNumber}>01</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.spineNodeTitle}>VERTEBRA 01 • MULADHARA (ROOT COCCYX)</Text>
-                  <Text style={styles.spineNodeSub}>
-                    {isVertebra01Ignited
-                      ? 'CURRENT IGNITED • GROUNDING SEALED'
-                      : 'TOUCH TO IGNITE YOUR NERVOUS SYSTEM'}
-                  </Text>
-                </View>
-              </View>
-
-              {isVertebra01Ignited ? (
-                <View style={styles.spineIgnitedBanner}>
-                  <Text style={styles.spineIgnitedCheck}>✓</Text>
-                  <Text style={styles.spineIgnitedText}>
-                    "The foundation is sealed. 32 thresholds await above. One conscious breath at a
-                    time."
-                  </Text>
-                </View>
-              ) : (
-                <View style={styles.spinePromptBox}>
-                  <Text style={styles.spinePromptText}>
-                    Tap to trigger the Vertebral Ascension Wave through your device.
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
-
-            {/* Spine Architectural Map Preview */}
-            <View style={[styles.sectionHeaderBox, { marginTop: 24 }]}>
-              <Text style={styles.sectionHeading}>THE FOUR SPINAL CONSCIOUSNESS ZONES</Text>
-              <Text style={styles.sectionSub}>Ascending column of sovereign awareness:</Text>
-            </View>
-
-            <View style={styles.spineZonesContainer}>
-              {[
-                {
-                  zone: 'CERVICAL & CRANIAL (25–33)',
-                  title: 'Sakshi / The Witness State',
-                  desc: 'Pure sovereign awareness looking directly at the digital matrix untouched.',
-                  color: '#FFB800',
-                  active: false,
-                },
-                {
-                  zone: 'THORACIC (17–24)',
-                  title: 'Heart Center / Stillness in Chaos',
-                  desc: 'De-armoring the chest. Witnessing digital agitation without flinching.',
-                  color: '#6C63FF',
-                  active: false,
-                },
-                {
-                  zone: 'LUMBAR (09–16)',
-                  title: 'Solar Plexus / Vital Prana',
-                  desc: '90-minute sustained deep focus capacity without dopamine grasping.',
-                  color: '#E84545',
-                  active: false,
-                },
-                {
-                  zone: 'SACRAL & COCCYX (01–08)',
-                  title: 'Root / Grounding in Reality',
-                  desc: 'Circadian ignition. Feet on the earth. Waking up without device noise.',
-                  color: '#39D98A',
-                  active: true,
-                },
-              ].map((z, idx) => (
-                <View key={idx} style={[styles.spineZoneCard, z.active && styles.spineZoneCardActive]}>
-                  <View style={styles.spineZoneTop}>
-                    <Text style={[styles.spineZoneTag, { color: z.color }]}>{z.zone}</Text>
-                    {z.active && <Text style={styles.spineZoneCurrent}>ACTIVE THRESHOLD</Text>}
-                  </View>
-                  <Text style={styles.spineZoneTitle}>{z.title}</Text>
-                  <Text style={styles.spineZoneDesc}>{z.desc}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
-
-        {/* ==================== STEP 4: HARDWARE ARMING & RESONANT DECAY TEST (DEV-98) ==================== */}
+        {/* ==================== STEP 4: THE THREE SEALS OF ARMOR & RESONANT DECAY ==================== */}
         {currentStep === 4 && (
           <View>
             <View style={styles.header}>
               <Text style={styles.eyebrow}>HARDWARE AS SPIRIT</Text>
-              <Text style={styles.title}>Sensory Engine & Arming</Text>
+              <Text style={styles.title}>The Three Seals of Armor.</Text>
               <Text style={styles.titleEm}>Zero Clipping. Pure Silence.</Text>
               <Text style={styles.subtitle}>
-                Shaniwar treats your glass and haptic actuators as a sacred instrument. Zero cloud tracking,
-                zero ads, pure presence.
+                Shaniwar treats your glass and haptic actuators as a sacred instrument. Arm the native
+                capabilities to hold the line.
               </Text>
             </View>
 
@@ -1022,8 +697,8 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
                 <Text style={styles.decayBadge}>JIRA DEV-98 • SENSORY PRECISION</Text>
                 <Text style={styles.decayTitle}>Resonant Decay to Pure Silence</Text>
                 <Text style={styles.decayDesc}>
-                  Experience the multi-tier micro-frequency haptic curve mimicking a Tibetan singing bowl
-                  decaying into zero silence.
+                  Experience the multi-tier micro-frequency haptic curve mimicking a 200-pound bronze
+                  Tibetan bowl decaying into zero silence.
                 </Text>
               </View>
 
@@ -1063,17 +738,17 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
               </View>
             </View>
 
-            {/* Permission Card 1: Notifications & Focus Shield */}
+            {/* Seal 1: The Shield of Focus */}
             <View style={styles.permCard}>
               <View style={styles.permHeader}>
                 <View style={styles.permIconBox}>
                   <Text style={styles.permIcon}>🛡️</Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.permTitle}>Focus Shield & Push Alerts</Text>
+                  <Text style={styles.permTitle}>Seal 01 • The Shield of Focus</Text>
                   <Text style={styles.permSub}>
-                    Required to trigger routine transitions, enforce the 7-second witness mirror, and
-                    sound alarms.
+                    To silence the siren call of the machine, Shaniwar must have authority to close the
+                    gates during focus blocks and digital blackout.
                   </Text>
                 </View>
               </View>
@@ -1093,22 +768,22 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
                     notifPermissionGranted && styles.permBtnTextGranted,
                   ]}
                 >
-                  {notifPermissionGranted ? '✓ ALERT PERMISSION GRANTED' : 'GRANT ALERT PERMISSION'}
+                  {notifPermissionGranted ? '✓ SHIELD ARMED & AUTHORIZED' : 'GRANT THE SHIELD'}
                 </Text>
               </TouchableOpacity>
             </View>
 
-            {/* Permission Card 2: CoreMotion Accelerometer */}
+            {/* Seal 2: The Grounding Sensor */}
             <View style={styles.permCard}>
               <View style={styles.permHeader}>
                 <View style={styles.permIconBox}>
                   <Text style={styles.permIcon}>🚶</Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.permTitle}>CoreMotion Sensor (Non-Snooze)</Text>
+                  <Text style={styles.permTitle}>Seal 02 • The Grounding Sensor</Text>
                   <Text style={styles.permSub}>
-                    Verifies genuine 20-step morning walks. Without physical movement, the alarm will
-                    continue sounding.
+                    Consciousness does not return through positive thinking; it returns through 20 physical
+                    paces on the earth to silence your dawn ignition.
                   </Text>
                 </View>
               </View>
@@ -1128,27 +803,27 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
                     motionPermissionGranted && styles.permBtnTextGranted,
                   ]}
                 >
-                  {motionPermissionGranted ? '✓ MOTION SENSOR CALIBRATED' : 'CALIBRATE MOTION SENSOR'}
+                  {motionPermissionGranted ? '✓ MOTION SENSOR CALIBRATED' : 'ARM THE MOTION SENSOR'}
                 </Text>
               </TouchableOpacity>
             </View>
 
-            {/* Permission Card 3: Monastic Audio Alarm */}
+            {/* Seal 3: The Horn of Dawn */}
             <View style={styles.permCard}>
               <View style={styles.permHeader}>
                 <View style={styles.permIconBox}>
                   <Text style={styles.permIcon}>🔔</Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.permTitle}>High-Priority Monastic Audio</Text>
+                  <Text style={styles.permTitle}>Seal 03 • The Horn of Dawn</Text>
                   <Text style={styles.permSub}>
-                    Audio alert playback configured to awaken you even during Do Not Disturb or silent
-                    modes.
+                    A gentle chime leaves you in morning fog. Shaniwar carries the high-priority monastic
+                    horn that shatters the morning trance.
                   </Text>
                 </View>
               </View>
               <View style={styles.permStatusPill}>
-                <Text style={styles.permStatusText}>✓ HARDWARE AUDIO READY</Text>
+                <Text style={styles.permStatusText}>✓ SACRED AUDIO READY</Text>
               </View>
             </View>
           </View>
@@ -1181,21 +856,21 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
               >
                 <Text style={styles.nextBtnText}>
                   {currentStep === 1
-                    ? 'PROCEED TO SOLAR ARC →'
+                    ? 'CROSS THE DIAL OF TRUTH →'
                     : currentStep === 2
-                    ? 'INITIATE 33 LIVING SPINE →'
-                    : 'ARM HARDWARE SENSORS →'}
+                    ? 'INSPECT 24/7 DINCHARYA →'
+                    : 'ARM THE THREE SEALS →'}
                 </Text>
               </TouchableOpacity>
             ) : (
               <TouchableOpacity
                 style={[styles.nextBtn, styles.lockInBtn]}
-                onPress={handleLockIn}
+                onPress={handleInscribe}
                 activeOpacity={0.85}
                 disabled={isLoading}
               >
                 <Text style={styles.lockInBtnText}>
-                  {isLoading ? 'CALIBRATING SPIRIT...' : 'ENTER THE VIRTUAL MONASTERY →'}
+                  {isLoading ? 'INSCRIBING COVENANT...' : 'INSCRIBE SOVEREIGN RYTHM →'}
                 </Text>
               </TouchableOpacity>
             )}
@@ -1212,7 +887,7 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
         <View style={styles.modalOverlay}>
           <View style={styles.modalSheet}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>ADD CUSTOM ROUTINE BLOCK</Text>
+              <Text style={styles.modalTitle}>INSCRIBE CUSTOM ROUTINE STONE</Text>
               <TouchableOpacity onPress={() => setIsAddModalOpen(false)}>
                 <Text style={styles.modalCloseText}>✕</Text>
               </TouchableOpacity>
@@ -1222,7 +897,7 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
               <Text style={styles.inputLabel}>ROUTINE NAME</Text>
               <TextInput
                 style={styles.textInput}
-                placeholder="e.g. Strength Training, Reading, Client Sprint"
+                placeholder="e.g. Strength Training, Analog Reading, Family Table"
                 placeholderTextColor="#666"
                 value={customTitle}
                 onChangeText={setCustomTitle}
@@ -1231,7 +906,7 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
               <Text style={styles.inputLabel}>SUBTITLE / INTENTION</Text>
               <TextInput
                 style={styles.textInput}
-                placeholder="e.g. Iron & Cardio • Zero phone scrolling"
+                placeholder="e.g. Iron & Mobility • Screen-Free Sanctuary"
                 placeholderTextColor="#666"
                 value={customSubtitle}
                 onChangeText={setCustomSubtitle}
@@ -1329,7 +1004,7 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
                 onPress={handleSaveCustomItem}
                 activeOpacity={0.85}
               >
-                <Text style={styles.modalAddBtnText}>INSERT INTO SOLAR ARC →</Text>
+                <Text style={styles.modalAddBtnText}>INSERT INTO DINCHARYA →</Text>
               </TouchableOpacity>
             </ScrollView>
           </View>
@@ -1370,7 +1045,7 @@ const styles = StyleSheet.create({
   },
   stepLabel: {
     ...TYPOGRAPHY.caption,
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '800',
     letterSpacing: 1.5,
     color: '#FFB800',
@@ -1427,7 +1102,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
-  // Step 1: AI Energy Diagnostic styles
+  // Step 1: Multi-Select Leaks
   leakGrid: {
     gap: 10,
     marginBottom: 16,
@@ -1460,6 +1135,27 @@ const styles = StyleSheet.create({
   leakLabelSelected: {
     color: '#FFB800',
   },
+  checkCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1.5,
+    borderColor: '#333',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkCircleSelected: {
+    borderColor: '#FFB800',
+    backgroundColor: '#FFB80022',
+  },
+  checkMark: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#FFB800',
+  },
+  checkMarkSelected: {
+    color: '#FFB800',
+  },
   leakTagline: {
     fontSize: 11,
     color: '#8E958A',
@@ -1468,7 +1164,7 @@ const styles = StyleSheet.create({
   zenMirrorCard: {
     backgroundColor: '#151713',
     borderWidth: 1,
-    borderColor: '#FFB80055',
+    borderColor: '#FFB80066',
     borderRadius: 14,
     padding: 16,
     marginBottom: 16,
@@ -1497,256 +1193,170 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 
-  // Archetypes
-  archetypeGrid: {
-    gap: 10,
-    marginBottom: 16,
-  },
-  archCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#101310',
-    borderWidth: 1,
-    borderColor: '#202620',
-    borderRadius: 14,
-    padding: 12,
-    gap: 12,
-  },
-  archCardSelected: {
-    borderColor: '#FFB800',
-    backgroundColor: '#171B14',
-  },
-  archIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 10,
-    backgroundColor: '#1C221C',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  archIcon: {
-    fontSize: 22,
-  },
-  archContent: {
-    flex: 1,
-  },
-  archTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 2,
-  },
-  archName: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#DDD',
-  },
-  archNameSelected: {
-    color: '#FFB800',
-  },
-  archTime: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#71796D',
-  },
-  archTimeSelected: {
-    color: '#FFB800',
-  },
-  archTagline: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#B49860',
-    marginBottom: 2,
-  },
-  archDescription: {
-    fontSize: 10,
-    color: '#8E958A',
-    lineHeight: 14,
-  },
-
-  // Step 2: Solar Arc
-  cardBox: {
-    backgroundColor: '#111411',
+  // Step 2: The Dial of Truth (Current vs Target)
+  realityBox: {
+    backgroundColor: '#0F120F',
     borderWidth: 1,
     borderColor: '#222822',
     borderRadius: 16,
     padding: 16,
     marginBottom: 14,
   },
-  cardBoxHeader: {
+  realityHeader: {
     marginBottom: 12,
   },
-  cardBoxTag: {
+  realityTag: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#8E958A',
+    letterSpacing: 1.5,
+    marginBottom: 2,
+  },
+  realityTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#CCC',
+  },
+  targetBox: {
+    backgroundColor: '#161914',
+    borderWidth: 1.5,
+    borderColor: '#FFB800',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+  },
+  targetHeader: {
+    marginBottom: 12,
+  },
+  targetTag: {
     fontSize: 9,
     fontWeight: '800',
     color: '#FFB800',
     letterSpacing: 1.5,
     marginBottom: 2,
   },
-  cardBoxTitle: {
-    fontSize: 16,
+  targetTitle: {
+    fontSize: 15,
     fontWeight: '700',
-    color: '#F4F4EC',
+    color: '#FFF',
   },
-  clockDisplayRow: {
+  clockDuoRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
+    gap: 12,
   },
-  stepperBtn: {
-    backgroundColor: '#1C221C',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-  },
-  stepperBtnText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#CCCCCC',
-  },
-  clockFace: {
+  clockHalfCard: {
+    flex: 1,
+    backgroundColor: '#141814',
+    borderWidth: 1,
+    borderColor: '#242D24',
+    borderRadius: 12,
+    padding: 12,
     alignItems: 'center',
   },
-  clockTime: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#FFB800',
-    letterSpacing: 1,
+  targetClockCard: {
+    backgroundColor: '#1A1E16',
+    borderColor: '#FFB80055',
   },
-  clockSub: {
-    fontSize: 9,
+  clockMiniTag: {
+    fontSize: 8,
     fontWeight: '800',
     color: '#71796D',
     letterSpacing: 1,
-    marginTop: 2,
+    marginBottom: 4,
   },
-  presetChipsRow: {
+  clockMiniTime: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#E0E2DC',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  microStepperRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 6,
-    justifyContent: 'center',
-    marginBottom: 10,
   },
-  chip: {
-    backgroundColor: '#171B17',
-    borderWidth: 1,
-    borderColor: '#283028',
+  microBtn: {
+    backgroundColor: '#1C221C',
     paddingVertical: 4,
     paddingHorizontal: 8,
     borderRadius: 6,
   },
-  chipSelected: {
-    backgroundColor: '#FFB800',
-    borderColor: '#FFB800',
+  targetMicroBtn: {
+    backgroundColor: '#26281B',
   },
-  chipText: {
-    fontSize: 10,
-    color: '#9CA395',
-    fontWeight: '600',
-  },
-  chipTextSelected: {
-    color: '#000000',
-    fontWeight: '800',
-  },
-  missionContainer: {
-    marginTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#1F251F',
-    paddingTop: 10,
-  },
-  missionLabel: {
+  microBtnText: {
     fontSize: 9,
-    fontWeight: '800',
-    color: '#B49860',
-    letterSpacing: 1,
-    marginBottom: 6,
-  },
-  missionChipsRow: {
-    gap: 6,
-  },
-  missionChip: {
-    backgroundColor: '#171B17',
-    borderWidth: 1,
-    borderColor: '#242C24',
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-  },
-  missionChipSelected: {
-    borderColor: '#FFB800',
-    backgroundColor: '#1F231B',
-  },
-  missionChipText: {
-    fontSize: 11,
-    color: '#CCCCCC',
-    fontWeight: '600',
-  },
-  missionChipTextSelected: {
-    color: '#FFB800',
     fontWeight: '700',
+    color: '#AAA',
   },
-  readoutCard: {
-    backgroundColor: '#121A13',
-    borderWidth: 1,
-    borderColor: '#253E29',
-    borderRadius: 14,
-    padding: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+
+  // Delta Bridge (Ledger of Stolen Life)
+  ledgerCard: {
+    backgroundColor: '#120F0F',
+    borderWidth: 1.5,
+    borderColor: '#E8454555',
+    borderRadius: 16,
+    padding: 16,
     marginBottom: 16,
   },
-  readoutIcon: {
-    fontSize: 22,
+  ledgerHeader: {
+    marginBottom: 12,
   },
-  readoutTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#86E09E',
-    marginBottom: 2,
-  },
-  readoutDesc: {
-    fontSize: 10,
-    color: '#71796D',
-    lineHeight: 14,
-  },
-  popularList: {
-    gap: 10,
-    paddingBottom: 8,
-  },
-  popularCard: {
-    backgroundColor: '#121612',
-    borderWidth: 1,
-    borderColor: '#242D24',
-    borderRadius: 10,
-    padding: 10,
-    minWidth: 130,
-  },
-  popularCardAdded: {
-    borderColor: '#39D98A55',
-    backgroundColor: '#101C12',
-  },
-  popularIcon: {
-    fontSize: 16,
-    marginBottom: 4,
-  },
-  popularTitle: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#EEE',
-  },
-  popularTime: {
-    fontSize: 9,
-    color: '#FFB800',
-    marginTop: 2,
-  },
-  popularAction: {
+  ledgerBadge: {
     fontSize: 9,
     fontWeight: '800',
-    color: '#FFB800',
-    marginTop: 4,
+    color: '#E84545',
+    letterSpacing: 1.5,
+    marginBottom: 2,
   },
+  ledgerHeading: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FFF',
+  },
+  ledgerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 4,
+  },
+  ledgerRowTotal: {
+    borderTopWidth: 1,
+    borderTopColor: '#331B1B',
+    marginTop: 6,
+    paddingTop: 8,
+  },
+  ledgerLabel: {
+    fontSize: 11,
+    color: '#A09898',
+  },
+  ledgerValue: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FFB800',
+  },
+  ledgerLabelTotal: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#FFF',
+  },
+  ledgerValueTotal: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#E84545',
+  },
+  ledgerCallout: {
+    backgroundColor: '#1E1212',
+    borderRadius: 10,
+    padding: 10,
+    marginTop: 10,
+  },
+  ledgerCalloutText: {
+    fontSize: 11,
+    color: '#E0D0D0',
+    lineHeight: 16,
+  },
+
+  // Step 3: Dincharya River Stones
   addCustomBtn: {
     backgroundColor: '#161C16',
     borderWidth: 1,
@@ -1754,221 +1364,74 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingVertical: 10,
     alignItems: 'center',
-    marginTop: 10,
-    marginBottom: 16,
+    marginBottom: 14,
   },
   addCustomBtnText: {
     fontSize: 11,
     fontWeight: '700',
     color: '#CCCCCC',
   },
-  timelinePreviewSection: {
-    gap: 8,
+  stonesList: {
+    gap: 10,
     marginBottom: 16,
   },
-  timelineItemRow: {
+  stoneCard: {
     backgroundColor: '#111411',
     borderWidth: 1,
     borderColor: '#202620',
-    borderRadius: 10,
-    padding: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  timelineItemIcon: {
-    fontSize: 16,
-  },
-  timelineItemTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  timelineItemTitle: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#EEE',
-  },
-  timelineItemTime: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#FFB800',
-  },
-  timelineItemTag: {
-    fontSize: 8,
-    fontWeight: '800',
-    color: '#71796D',
-    letterSpacing: 1,
-    marginTop: 2,
-  },
-  customItemsSection: {
-    marginTop: 8,
-    gap: 6,
-  },
-  customItemsHeader: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: '#B49860',
-    letterSpacing: 1,
-    marginBottom: 4,
-  },
-  customItemRow: {
-    backgroundColor: '#141814',
-    borderWidth: 1,
-    borderColor: '#2B382B',
-    borderRadius: 10,
-    padding: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  customItemIcon: {
-    fontSize: 14,
-  },
-  customItemTitle: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#FFF',
-  },
-  customItemSub: {
-    fontSize: 9,
-    color: '#8E958A',
-  },
-  deleteCustomBtn: {
-    padding: 4,
-  },
-  deleteCustomText: {
-    fontSize: 14,
-  },
-
-  // Step 3: 33 Living Spine Styles
-  spineInitiationCard: {
-    backgroundColor: '#121412',
-    borderWidth: 1,
-    borderColor: '#262D26',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-  },
-  spineInitiationCardIgnited: {
-    borderColor: '#FFB800',
-    backgroundColor: '#191C15',
-  },
-  spineInitiationHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  spineNodePulse: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 2,
-    borderColor: '#444',
-    backgroundColor: '#171B17',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  spineNodePulseIgnited: {
-    borderColor: '#FFB800',
-    backgroundColor: '#FFB80020',
-  },
-  spineNodeNumber: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#FFB800',
-  },
-  spineNodeTitle: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#FFB800',
-    letterSpacing: 1,
-  },
-  spineNodeSub: {
-    fontSize: 9,
-    fontWeight: '700',
-    color: '#8E958A',
-    marginTop: 2,
-  },
-  spineIgnitedBanner: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
-    marginTop: 12,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#2B3224',
-  },
-  spineIgnitedCheck: {
-    fontSize: 14,
-    color: '#39D98A',
-    fontWeight: '800',
-  },
-  spineIgnitedText: {
-    flex: 1,
-    fontSize: 11,
-    fontStyle: 'italic',
-    color: '#E0E2DC',
-    lineHeight: 16,
-  },
-  spinePromptBox: {
-    marginTop: 10,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#202620',
-  },
-  spinePromptText: {
-    fontSize: 10,
-    color: '#71796D',
-  },
-  spineZonesContainer: {
-    gap: 10,
-    marginBottom: 16,
-  },
-  spineZoneCard: {
-    backgroundColor: '#101310',
-    borderWidth: 1,
-    borderColor: '#202620',
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 12,
   },
-  spineZoneCardActive: {
-    borderColor: '#39D98A55',
-    backgroundColor: '#121A13',
+  stoneCardCore: {
+    borderWidth: 1.5,
+    borderColor: '#FFB80066',
+    backgroundColor: '#161914',
   },
-  spineZoneTop: {
+  stoneCardDisabled: {
+    opacity: 0.45,
+  },
+  stoneTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+  },
+  stoneTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFF',
+    marginBottom: 2,
+  },
+  stoneSub: {
+    fontSize: 10,
+    color: '#8E958A',
     marginBottom: 4,
   },
-  spineZoneTag: {
-    fontSize: 9,
-    fontWeight: '800',
-    letterSpacing: 1,
-  },
-  spineZoneCurrent: {
+  stoneTag: {
     fontSize: 8,
     fontWeight: '800',
-    color: '#39D98A',
-    backgroundColor: '#182E1D',
+    color: '#71796D',
+    letterSpacing: 1,
+  },
+  stoneRight: {
+    alignItems: 'flex-end',
+  },
+  stoneTime: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#FFF',
+  },
+  stoneFixedPill: {
+    fontSize: 8,
+    fontWeight: '800',
+    color: '#FFB800',
+    backgroundColor: '#262418',
     paddingVertical: 2,
     paddingHorizontal: 6,
     borderRadius: 4,
-  },
-  spineZoneTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#E0E2DC',
-    marginBottom: 2,
-  },
-  spineZoneDesc: {
-    fontSize: 10,
-    color: '#71796D',
-    lineHeight: 14,
+    marginTop: 6,
   },
 
-  // Step 4: Hardware Arming & Resonant Decay (DEV-98)
+  // Step 4: Hardware as Spirit & Three Seals of Armor
   decayCard: {
     backgroundColor: '#121512',
     borderWidth: 1,

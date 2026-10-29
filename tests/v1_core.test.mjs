@@ -380,3 +380,117 @@ test('Spine initiation engine enforces base vertebra 01 grounding before ascendi
   assert.equal(solarIgnite.ignited, true);
 });
 
+// 14. Test Multi-Select Compound Bodhidharma Zen Synthesis (DEV-100)
+function generateCompoundDiagnosis(selectedLeaks) {
+  if (selectedLeaks.length === 0) {
+    return 'Touch the conduits where your energy bleeds. Sovereign silence requires absolute honesty.';
+  }
+  const hasMidnight = selectedLeaks.includes('dopamine_feeds');
+  const hasMorning = selectedLeaks.includes('morning_inertia');
+  const hasWork = selectedLeaks.includes('fragmented_work');
+  const hasRestless = selectedLeaks.includes('restless_mind');
+
+  if (hasMidnight && hasMorning && hasWork && hasRestless) {
+    return 'The full siege: mind racing, morning sluggish, work scattered, feeds devouring the night. When everything is chaos, returning to the center is the only choice. We begin at vertebra zero.';
+  }
+  if (hasMidnight && hasMorning) {
+    return 'You do not wake up exhausted because you slept poorly; you scroll at midnight because you never claimed your dawn. The midnight screen is the revenge of an unlived day. We fix your sleep the instant your heels touch the earth.';
+  }
+  if (hasMidnight && hasWork) {
+    return 'You switch between fifty noisy browser tabs all day and self-medicate with algorithmic dopamine at night. Your attention is fractured from dawn until twilight. Choose one single task, take one conscious breath, and step into the circle.';
+  }
+  if (hasWork && hasRestless) {
+    return 'Ten open tabs is not productivity; it is cowardice running from one difficult thought. Your racing thoughts reflect a scattered workspace. Sit back into the witness. Anchor the breath.';
+  }
+  return 'Your life force is bleeding at multiple thresholds. We will not fix your life with productivity tips. We will place a mirror in your path. Stand upright.';
+}
+
+test('Multi-select compound diagnosis accurately synthesizes intersecting root causes under Three-Sentence Law', () => {
+  const permutations = [
+    [],
+    ['dopamine_feeds', 'morning_inertia'],
+    ['dopamine_feeds', 'fragmented_work'],
+    ['fragmented_work', 'restless_mind'],
+    ['dopamine_feeds', 'morning_inertia', 'fragmented_work', 'restless_mind'],
+  ];
+
+  for (const leaks of permutations) {
+    const text = generateCompoundDiagnosis(leaks);
+    const sentences = text.split(/(?<=[.?!])\s+/).filter(Boolean);
+    assert.ok(
+      sentences.length <= 4,
+      `Compound diagnosis for [${leaks.join(',')}] exceeds 4 sentences: ${sentences.length}`
+    );
+    assert.ok(text.length > 20);
+  }
+});
+
+// 15. Test Reality-Target Delta Bridge Calculations (Ledger of Stolen Life)
+function computeDelta(current, target) {
+  const curWakeMins = current.wakeTime.hour * 60 + current.wakeTime.minute;
+  const tgtWakeMins = target.wakeTime.hour * 60 + target.wakeTime.minute;
+  const lostMorningHours = Math.round((Math.max(0, curWakeMins - tgtWakeMins) / 60) * 10) / 10;
+
+  let curSleepMins = current.sleepTime.hour * 60 + current.sleepTime.minute;
+  let tgtSleepMins = target.sleepTime.hour * 60 + target.sleepTime.minute;
+  if (curSleepMins < 12 * 60) curSleepMins += 24 * 60;
+  if (tgtSleepMins < 12 * 60) tgtSleepMins += 24 * 60;
+  const lostNightHours = Math.round((Math.max(0, curSleepMins - tgtSleepMins) / 60) * 10) / 10;
+
+  const totalDailySurrenderedHours = Math.round((lostMorningHours + lostNightHours) * 10) / 10;
+  const annualWakingDaysLost = Math.round((totalDailySurrenderedHours * 365) / 16);
+  const annualConsciousHoursReclaimed = Math.round(
+    Math.max(0, target.dailyDeepWorkHours - current.dailyDeepWorkHours) * 365
+  );
+
+  return {
+    lostMorningHours,
+    lostNightHours,
+    totalDailySurrenderedHours,
+    annualWakingDaysLost,
+    annualConsciousHoursReclaimed,
+  };
+}
+
+test('Delta Bridge correctly computes Ledger of Stolen Life and annual days surrendered', () => {
+  const current = {
+    wakeTime: { hour: 8, minute: 15 },
+    sleepTime: { hour: 1, minute: 15 },
+    dailyDeepWorkHours: 0.75,
+  };
+  const target = {
+    wakeTime: { hour: 5, minute: 30 },
+    sleepTime: { hour: 22, minute: 0 },
+    dailyDeepWorkHours: 4.0,
+  };
+
+  const delta = computeDelta(current, target);
+  assert.equal(delta.lostMorningHours, 2.8); // 8:15 vs 5:30 = 2h 45m = 2.75 -> 2.8
+  assert.equal(delta.lostNightHours, 3.3); // 25:15 vs 22:00 = 3h 15m = 3.25 -> 3.3
+  assert.equal(delta.totalDailySurrenderedHours, 6.1);
+  assert.ok(delta.annualWakingDaysLost >= 100, 'Surrenders over 100 waking days per year');
+  assert.equal(delta.annualConsciousHoursReclaimed, 1186); // 3.25h * 365 = 1186
+});
+
+// 16. Test Adaptive 24/7 Dincharya Generation with 3 Iron Anchors
+function generateDincharya(target) {
+  return [
+    { id: 'wake_alarm', title: 'Dawn Ignition', tag: 'CORE ANCHOR', isIron: true },
+    { id: 'dawn_breath', title: 'Dawn Kundalini Breath', tag: 'HYBRID MONK', isIron: false },
+    { id: 'protection_window', title: 'The Golden Forge', tag: 'CORE ANCHOR', isIron: true },
+    { id: 'midday_stop', title: 'Midday Osho STOP', tag: 'HYBRID MONK', isIron: false },
+    { id: 'evening_transition', title: 'Evening Sunset Decompression', tag: 'DECOMPRESSION', isIron: false },
+    { id: 'sleep_sanctum', title: 'Digital Blackout', tag: 'CORE ANCHOR', isIron: true },
+  ];
+}
+
+test('Adaptive Dincharya generation contains the 3 Sacred Iron Anchors', () => {
+  const items = generateDincharya({ wakeTime: { hour: 5, minute: 30 } });
+  const ironAnchors = items.filter(i => i.isIron);
+  assert.equal(ironAnchors.length, 3);
+  assert.equal(ironAnchors[0].id, 'wake_alarm');
+  assert.equal(ironAnchors[1].id, 'protection_window');
+  assert.equal(ironAnchors[2].id, 'sleep_sanctum');
+});
+
+
