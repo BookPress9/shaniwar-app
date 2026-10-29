@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Shaniwar by The Hybrid Monk - Jira Cloud Synchronizer
+ * Shanivar by The Hybrid Monk - Jira Cloud Synchronizer
  * Connects to https://shanivar.atlassian.net (Project: DEV)
  * 
  * Usage:
@@ -64,7 +64,7 @@ const LOCAL_ROADMAP = {
       id: 'DEV-V1-02',
       title: 'Obsidian Focus Shield & iOS Shortcuts Intercept',
       status: 'READY_IN_CODE',
-      scope: 'Intercept mindless app opens (Instagram/TikTok), redirect to shaniwar://shield with conscious 10s breathing gate.',
+      scope: 'Intercept mindless app opens (Instagram/TikTok), redirect to shanivar://shield with conscious 10s breathing gate.',
       component: 'Dincharya / Shield',
     },
     {
@@ -156,7 +156,7 @@ async function fetchJiraIssues() {
   }
 
   try {
-    const url = `${JIRA_HOST}/rest/api/3/search/jql?jql=project=${JIRA_PROJECT_KEY}&maxResults=100`;
+    const url = `${JIRA_HOST}/rest/api/3/search?jql=project=${JIRA_PROJECT_KEY}+ORDER+BY+created+DESC&maxResults=100`;
     console.log(`Connecting to ${JIRA_HOST} (Project: ${JIRA_PROJECT_KEY})...`);
     const res = await fetch(url, {
       headers: {
@@ -237,7 +237,7 @@ async function createJiraIssue(summary, description) {
 
 function displaySprintPlan() {
   console.log('======================================================================');
-  console.log('🔥 SHANIWAR BY THE HYBRID MONK — SPRINT 1: V1 MVP (LOCK-IN BEFORE GO LIVE)');
+  console.log('🔥 SHANIVAR BY THE HYBRID MONK — SPRINT 1: V1 MVP (LOCK-IN BEFORE GO LIVE)');
   console.log('======================================================================');
   LOCAL_ROADMAP.sprint1_v1_mvp.forEach((t) => {
     console.log(` • [${t.id}] ${t.title}`);

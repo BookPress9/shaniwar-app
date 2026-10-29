@@ -119,7 +119,7 @@ export const PaywallScreen = ({ onBack, onSuccess }: Props) => {
             <Text style={styles.heroEmoji}>👑</Text>
           </Animated.View>
 
-          <Text style={styles.eyebrow}>SHANIWAR BY THE HYBRID MONK</Text>
+          <Text style={styles.eyebrow}>SHANIVAR BY THE HYBRID MONK</Text>
           <Text style={styles.heroTitle}>MONK PASS • SOVEREIGN DISCIPLINE</Text>
           <Text style={styles.heroSub}>
             Step out of the algorithmic trance. Master waking, guard your focus, and stay anchored individually, as a couple, or as a family.

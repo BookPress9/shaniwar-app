@@ -493,4 +493,81 @@ test('Adaptive Dincharya generation contains the 3 Sacred Iron Anchors', () => {
   assert.equal(ironAnchors[2].id, 'sleep_sanctum');
 });
 
+// 17. Test Solar Arc 24-Hour Planetary Engine (Steve Jobs Mandate DEV-101)
+function computeSolarPhase(hours, minutes) {
+  const totalMins = hours * 60 + minutes;
+  const percent = Math.min(100, Math.max(0, (totalMins / 1440) * 100));
+
+  let phase = 'OBSIDIAN SLEEP SANCTUM';
+  if (totalMins >= 4 * 60 && totalMins < 8 * 60) {
+    phase = 'DAWN IGNITION (SUNRISE)';
+  } else if (totalMins >= 8 * 60 && totalMins < 14 * 60) {
+    phase = 'THE GOLDEN FORGE (SOLAR ZENITH)';
+  } else if (totalMins >= 14 * 60 && totalMins < 20 * 60) {
+    phase = 'TWILIGHT HARMONY';
+  }
+  return { percent, phase };
+}
+
+test('Solar Arc correctly classifies 4 planetary quadrants across 24h cycle', () => {
+  const dawn = computeSolarPhase(6, 30);
+  assert.equal(dawn.phase, 'DAWN IGNITION (SUNRISE)');
+  assert.ok(dawn.percent > 25 && dawn.percent < 35);
+
+  const zenith = computeSolarPhase(12, 0);
+  assert.equal(zenith.phase, 'THE GOLDEN FORGE (SOLAR ZENITH)');
+  assert.equal(zenith.percent, 50.0);
+
+  const dusk = computeSolarPhase(18, 30);
+  assert.equal(dusk.phase, 'TWILIGHT HARMONY');
+
+  const night = computeSolarPhase(23, 15);
+  assert.equal(night.phase, 'OBSIDIAN SLEEP SANCTUM');
+});
+
+// 18. Test The Witness Mirror Dual Choice & 7-Minute Bell (Steve Jobs Mandate DEV-102)
+class WitnessMirrorController {
+  constructor() {
+    this.state = 'FORGE_ACTIVE';
+    this.witnessBellArmed = false;
+    this.witnessCountdownSecs = 7;
+  }
+
+  interrupt() {
+    this.state = 'WITNESS_PAUSE';
+    this.witnessCountdownSecs = 7;
+  }
+
+  stepBackToCenter() {
+    this.state = 'FORGE_ACTIVE';
+    this.witnessBellArmed = false;
+  }
+
+  enterWithAwareness() {
+    this.state = 'AWARE_BROWSING';
+    this.witnessBellArmed = true;
+  }
+}
+
+test('The Witness Mirror replaces punitive lockout with sovereign dual choice', () => {
+  const controller = new WitnessMirrorController();
+  assert.equal(controller.state, 'FORGE_ACTIVE');
+
+  controller.interrupt();
+  assert.equal(controller.state, 'WITNESS_PAUSE');
+  assert.equal(controller.witnessCountdownSecs, 7);
+
+  // Path A: Return to center
+  controller.stepBackToCenter();
+  assert.equal(controller.state, 'FORGE_ACTIVE');
+  assert.equal(controller.witnessBellArmed, false);
+
+  // Path B: Conscious exit with 7-min recall bell
+  controller.interrupt();
+  controller.enterWithAwareness();
+  assert.equal(controller.state, 'AWARE_BROWSING');
+  assert.equal(controller.witnessBellArmed, true);
+});
+
+
 

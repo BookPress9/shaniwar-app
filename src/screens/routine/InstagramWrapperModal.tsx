@@ -49,10 +49,10 @@ export const InstagramWrapperModal = ({ visible, onClose, onTestIntercept }: Pro
           <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
             {/* Philosophical Why Card */}
             <View style={styles.whyCard}>
-              <Text style={styles.whyTitle}>WHY WRAP INSTAGRAM WITH SHANIWAR?</Text>
+              <Text style={styles.whyTitle}>WHY WRAP INSTAGRAM WITH SHANIVAR?</Text>
               <Text style={styles.whyText}>
                 When you tap Instagram unconsciously, your thumb acts without your consent. By wrapping
-                your iPhone’s internal automation around Shaniwar, your phone halts the reflex loop
+                your iPhone’s internal automation around Shanivar, your phone halts the reflex loop
                 and gives you a conscious breath check before the algorithm traps you.
               </Text>
             </View>
@@ -98,7 +98,7 @@ export const InstagramWrapperModal = ({ visible, onClose, onTestIntercept }: Pro
                     Add Action → Search <Text style={styles.boldWhite}>“Open URL”</Text> and enter:
                   </Text>
                   <View style={styles.urlBox}>
-                    <Text style={styles.urlText}>shaniwar://shield</Text>
+                    <Text style={styles.urlText}>shanivar://shield</Text>
                   </View>
                   <Text style={styles.stepBodySub}>
                     (Or choose action: <Text style={styles.boldWhite}>Open App → Hybrid Monk</Text>).

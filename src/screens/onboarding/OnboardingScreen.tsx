@@ -395,7 +395,7 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
               <Text style={styles.title}>The world is loud.</Text>
               <Text style={styles.titleEm}>Where does your life force bleed?</Text>
               <Text style={styles.subtitle}>
-                Tap every conduit where your vitality drains. Shaniwar places an unsparing mirror before
+                Tap every conduit where your vitality drains. Shanivar places an unsparing mirror before
                 you, not a cage.
               </Text>
             </View>
@@ -686,7 +686,7 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
               <Text style={styles.title}>The Three Seals of Armor.</Text>
               <Text style={styles.titleEm}>Zero Clipping. Pure Silence.</Text>
               <Text style={styles.subtitle}>
-                Shaniwar treats your glass and haptic actuators as a sacred instrument. Arm the native
+                Shanivar treats your glass and haptic actuators as a sacred instrument. Arm the native
                 capabilities to hold the line.
               </Text>
             </View>
@@ -747,7 +747,7 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
                 <View style={{ flex: 1 }}>
                   <Text style={styles.permTitle}>Seal 01 • The Shield of Focus</Text>
                   <Text style={styles.permSub}>
-                    To silence the siren call of the machine, Shaniwar must have authority to close the
+                    To silence the siren call of the machine, Shanivar must have authority to close the
                     gates during focus blocks and digital blackout.
                   </Text>
                 </View>
@@ -817,7 +817,7 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
                 <View style={{ flex: 1 }}>
                   <Text style={styles.permTitle}>Seal 03 • The Horn of Dawn</Text>
                   <Text style={styles.permSub}>
-                    A gentle chime leaves you in morning fog. Shaniwar carries the high-priority monastic
+                    A gentle chime leaves you in morning fog. Shanivar carries the high-priority monastic
                     horn that shatters the morning trance.
                   </Text>
                 </View>

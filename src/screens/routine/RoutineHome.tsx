@@ -73,8 +73,29 @@ export const RoutineHome = ({ onNavigate }: Props) => {
     }
   };
 
+  const getSolarArcData = () => {
+    const now = new Date();
+    const minutes = now.getHours() * 60 + now.getMinutes();
+    const percent = Math.min(100, Math.max(0, (minutes / 1440) * 100));
+
+    let phase = 'OBSIDIAN SLEEP SANCTUM';
+    let phaseDesc = 'Digital blackout & cellular restoration';
+    if (minutes >= 4 * 60 && minutes < 8 * 60) {
+      phase = 'DAWN IGNITION (SUNRISE)';
+      phaseDesc = 'Light hits retina • Grounding paces on earth';
+    } else if (minutes >= 8 * 60 && minutes < 14 * 60) {
+      phase = 'THE GOLDEN FORGE (SOLAR ZENITH)';
+      phaseDesc = 'Peak pranic capacity • Obsidian deep work shield';
+    } else if (minutes >= 14 * 60 && minutes < 20 * 60) {
+      phase = 'TWILIGHT HARMONY';
+      phaseDesc = 'De-armoring chest • Transition from world to self';
+    }
+    return { percent, phase, phaseDesc };
+  };
+
   const handleToggleComplete = async (id: string) => {
-    HapticService.successNotification();
+    // Steve Jobs Filter: Visceral resonant decay of a bronze monastery bowl
+    HapticService.resonantDecayToSilence();
     const isCompleted = completedAnchors.includes(id);
     const updated = isCompleted
       ? completedAnchors.filter((it) => it !== id)
@@ -118,13 +139,14 @@ export const RoutineHome = ({ onNavigate }: Props) => {
   };
 
   const activeArchMeta = ARCHETYPES.find((a) => a.id === currentArchetype) || ARCHETYPES[0];
+  const solarData = getSolarArcData();
 
   return (
     <View style={styles.container}>
       {/* Sticky Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.eyebrow}>SHANIWAR • BY THE HYBRID MONK</Text>
+          <Text style={styles.eyebrow}>SHANIVAR • BY THE HYBRID MONK</Text>
           <Text style={styles.title}>DINCHARYA • दिनचर्या</Text>
         </View>
         <View style={styles.headerRightActions}>
@@ -251,29 +273,85 @@ export const RoutineHome = ({ onNavigate }: Props) => {
             </TouchableOpacity>
           </View>
 
-          {/* Daily Sovereignty Progress Meter (Forest/Opal Gamification Low-Hanging Fruit) */}
-          <View style={styles.sovereigntyMeterBox}>
-            <View style={styles.sovereigntyMeterTop}>
-              <Text style={styles.sovereigntyMeterLabel}>
-                🔥 {completedAnchors.length} OF {items.filter(i => i.enabled).length} ANCHORS SEALED
-              </Text>
-              <Text style={styles.sovereigntyMeterPercent}>
-                {items.filter(i => i.enabled).length > 0
-                  ? Math.round((completedAnchors.length / items.filter(i => i.enabled).length) * 100)
-                  : 0}% SOVEREIGNTY
-              </Text>
+          {/* THE 24-HOUR HORIZONTAL SOLAR ARC (Steve Jobs Sparring Mandate DEV-101) */}
+          <View style={styles.solarArcCard}>
+            <View style={styles.solarArcTop}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.solarArcEyebrow}>24-HOUR PLANETARY ARC • DEV-101</Text>
+                <Text style={styles.solarArcPhase}>{solarData.phase}</Text>
+                <Text style={styles.solarArcDesc}>{solarData.phaseDesc}</Text>
+              </View>
+              <View style={styles.solarArcBadge}>
+                <Text style={styles.solarArcBadgeText}>
+                  {completedAnchors.length} / {items.filter(i => i.enabled).length} SEALED
+                </Text>
+              </View>
             </View>
-            <View style={styles.sovereigntyMeterTrack}>
+
+            {/* The Solar Arc Track with Live Sun Cursor */}
+            <View style={styles.solarTrackWrapper}>
+              <View style={styles.solarTrackBackground} />
               <View
                 style={[
-                  styles.sovereigntyMeterFill,
-                  {
-                    width: `${items.filter(i => i.enabled).length > 0
-                      ? Math.min(100, Math.round((completedAnchors.length / items.filter(i => i.enabled).length) * 100))
-                      : 0}%`,
-                  },
+                  styles.solarTrackFill,
+                  { width: `${solarData.percent}%` },
                 ]}
               />
+              <View
+                style={[
+                  styles.solarCursor,
+                  { left: `${Math.min(94, Math.max(2, solarData.percent))}%` },
+                ]}
+              >
+                <Text style={styles.solarCursorEmoji}>☀️</Text>
+              </View>
+            </View>
+
+            {/* Planetary Quadrants */}
+            <View style={styles.solarQuadrantsRow}>
+              <Text style={styles.solarQuadText}>05:00 DAWN</Text>
+              <Text style={styles.solarQuadText}>12:00 ZENITH</Text>
+              <Text style={styles.solarQuadText}>18:00 DUSK</Text>
+              <Text style={styles.solarQuadText}>23:00 VOID</Text>
+            </View>
+
+            {/* The 3 Sacred Iron Anchors Indicator */}
+            <View style={styles.ironAnchorsContainer}>
+              <View
+                style={[
+                  styles.ironAnchorItem,
+                  completedAnchors.includes('wake_alarm') && styles.ironAnchorItemDone,
+                ]}
+              >
+                <Text style={styles.ironAnchorStatus}>
+                  {completedAnchors.includes('wake_alarm') ? '✓' : '○'}
+                </Text>
+                <Text style={styles.ironAnchorText}>Dawn Ignition</Text>
+              </View>
+
+              <View
+                style={[
+                  styles.ironAnchorItem,
+                  completedAnchors.includes('protection_window') && styles.ironAnchorItemDone,
+                ]}
+              >
+                <Text style={styles.ironAnchorStatus}>
+                  {completedAnchors.includes('protection_window') ? '✓' : '○'}
+                </Text>
+                <Text style={styles.ironAnchorText}>Golden Forge</Text>
+              </View>
+
+              <View
+                style={[
+                  styles.ironAnchorItem,
+                  completedAnchors.includes('sleep_sanctum') && styles.ironAnchorItemDone,
+                ]}
+              >
+                <Text style={styles.ironAnchorStatus}>
+                  {completedAnchors.includes('sleep_sanctum') ? '✓' : '○'}
+                </Text>
+                <Text style={styles.ironAnchorText}>Sleep Sanctum</Text>
+              </View>
             </View>
           </View>
 
@@ -450,44 +528,133 @@ export const RoutineHome = ({ onNavigate }: Props) => {
 };
 
 const styles = StyleSheet.create({
-  sovereigntyMeterBox: {
-    backgroundColor: '#121612',
-    borderRadius: 14,
-    padding: 12,
+  // Solar Arc Engine (Steve Jobs Sparring Filter DEV-101)
+  solarArcCard: {
+    backgroundColor: '#0A0C0A',
+    borderRadius: 16,
+    padding: 16,
     borderWidth: 1,
-    borderColor: '#222B22',
-    marginBottom: 16,
+    borderColor: 'rgba(255, 149, 0, 0.25)',
+    marginBottom: 18,
   },
-  sovereigntyMeterTop: {
+  solarArcTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
+    alignItems: 'flex-start',
+    marginBottom: 12,
   },
-  sovereigntyMeterLabel: {
+  solarArcEyebrow: {
     ...TYPOGRAPHY.caption,
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '800',
-    color: '#FFB800',
+    color: '#FF9500',
+    letterSpacing: 1.5,
+  },
+  solarArcPhase: {
+    ...TYPOGRAPHY.body,
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginTop: 2,
+  },
+  solarArcDesc: {
+    ...TYPOGRAPHY.caption,
+    fontSize: 11,
+    color: '#8E958A',
+    marginTop: 2,
+  },
+  solarArcBadge: {
+    backgroundColor: 'rgba(255, 149, 0, 0.12)',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 149, 0, 0.3)',
+  },
+  solarArcBadgeText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#FF9500',
     letterSpacing: 1,
   },
-  sovereigntyMeterPercent: {
-    ...TYPOGRAPHY.caption,
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#39D98A',
-    letterSpacing: 1,
+  solarTrackWrapper: {
+    height: 18,
+    justifyContent: 'center',
+    marginVertical: 6,
+    position: 'relative',
   },
-  sovereigntyMeterTrack: {
+  solarTrackBackground: {
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#1C241C',
-    overflow: 'hidden',
+    backgroundColor: '#161916',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
   },
-  sovereigntyMeterFill: {
-    height: '100%',
-    backgroundColor: '#FFB800',
+  solarTrackFill: {
+    position: 'absolute',
+    left: 0,
+    height: 6,
     borderRadius: 3,
+    backgroundColor: '#FF9500',
+  },
+  solarCursor: {
+    position: 'absolute',
+    top: 0,
+    width: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: -10,
+  },
+  solarCursorEmoji: {
+    fontSize: 14,
+  },
+  solarQuadrantsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 2,
+    marginBottom: 12,
+    paddingHorizontal: 2,
+  },
+  solarQuadText: {
+    fontSize: 8,
+    color: '#555E54',
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  ironAnchorsContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  ironAnchorItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: '#111411',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  ironAnchorItemDone: {
+    backgroundColor: 'rgba(255, 149, 0, 0.12)',
+    borderColor: '#FF9500',
+  },
+  ironAnchorStatus: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#FF9500',
+  },
+  ironAnchorText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#D0D6CB',
+    letterSpacing: 0.5,
   },
   completeCheckBtn: {
     paddingVertical: 3,

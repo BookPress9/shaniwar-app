@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { RoutineTimelineItem, routineService } from './routineService';
 
-export const AI_BASELINE_KEY = '@shaniwar_ai_energy_baseline_v2';
+export const AI_BASELINE_KEY = '@shanivar_ai_energy_baseline_v2';
 
 export type EnergyLeakId =
   | 'dopamine_feeds'

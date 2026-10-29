@@ -1,9 +1,9 @@
 {
   "expo": {
-    "name": "Shaniwar: Living Dincharya",
-    "slug": "shaniwar",
+    "name": "Shanivar: Living Dincharya",
+    "slug": "shanivar",
     "version": "1.0.0",
-    "scheme": "shaniwar",
+    "scheme": "shanivar",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -13,12 +13,12 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.shaniwar.app",
+      "bundleIdentifier": "com.shanivar.app",
       "buildNumber": "1",
       "userInterfaceStyle": "dark",
       "infoPlist": {
-        "NSCameraUsageDescription": "Shaniwar uses the camera for waking action missions to verify wakefulness without cloud upload.",
-        "NSMotionUsageDescription": "Shaniwar uses motion sensors to detect genuine ambulatory steps for the morning action alarm.",
+        "NSCameraUsageDescription": "Shanivar uses the camera for waking action missions to verify wakefulness without cloud upload.",
+        "NSMotionUsageDescription": "Shanivar uses motion sensors to detect genuine ambulatory steps for the morning action alarm.",
         "UIBackgroundModes": [
           "audio",
           "fetch",
@@ -28,7 +28,7 @@
       }
     },
     "android": {
-      "package": "com.shaniwar.app",
+      "package": "com.shanivar.app",
       "versionCode": 1,
       "permissions": [
         "RECEIVE_BOOT_COMPLETED",
@@ -54,7 +54,7 @@
       [
         "expo-sensors",
         {
-          "motionPermission": "Shaniwar uses motion sensors to detect genuine ambulatory steps for the morning action alarm."
+          "motionPermission": "Shanivar uses motion sensors to detect genuine ambulatory steps for the morning action alarm."
         }
       ],
       "expo-status-bar"
