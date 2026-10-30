@@ -374,12 +374,12 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
         <Text style={styles.stepLabel}>
           STEP {currentStep} OF 4 •{' '}
           {currentStep === 1
-            ? 'THE FRACTURED RESERVOIR (DEV-99)'
+            ? 'CONDUITS'
             : currentStep === 2
-            ? 'THE DIAL OF TRUTH & DELTA BRIDGE'
+            ? 'DIAL OF TRUTH'
             : currentStep === 3
-            ? 'THE 24/7 DINCHARYA'
-            : 'THE THREE SEALS OF ARMOR (DEV-98)'}
+            ? '24-HOUR ARC'
+            : 'THE THREE SEALS'}
         </Text>
       </View>
 
@@ -391,19 +391,11 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
         {currentStep === 1 && (
           <View>
             <View style={styles.header}>
-              <Text style={styles.eyebrow}>THE SOVEREIGN RETURN</Text>
-              <Text style={styles.title}>The world is loud.</Text>
-              <Text style={styles.titleEm}>Where does your life force bleed?</Text>
+              <Text style={styles.eyebrow}>CONDUITS</Text>
+              <Text style={styles.title}>Where does your life leak?</Text>
               <Text style={styles.subtitle}>
-                Tap every conduit where your vitality drains. Shanivar places an unsparing mirror before
-                you, not a cage.
+                Tap the conduits. Face the drain. Shanivar places an unsparing mirror before you.
               </Text>
-            </View>
-
-            {/* Multi-Select Energy Conduits Grid */}
-            <View style={styles.sectionHeaderBox}>
-              <Text style={styles.sectionHeading}>SELECT ALL ACTIVE CONDUITS ({selectedLeaks.length} SELECTED)</Text>
-              <Text style={styles.sectionSub}>Touch to acknowledge the leakage of consciousness:</Text>
             </View>
 
             <View style={styles.leakGrid}>
@@ -448,16 +440,14 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
           </View>
         )}
 
-        {/* ==================== STEP 2: CURRENT REALITY VS TARGET STANCE & DELTA BRIDGE ==================== */}
+        {/* ==================== STEP 2: THE DIAL OF TRUTH & DELTA BRIDGE ==================== */}
         {currentStep === 2 && (
           <View>
             <View style={styles.header}>
-              <Text style={styles.eyebrow}>THE DIAL OF TRUTH</Text>
-              <Text style={styles.title}>Where You Stand.</Text>
-              <Text style={styles.titleEm}>Where You Will Plant Your Flag.</Text>
+              <Text style={styles.eyebrow}>DIAL OF TRUTH</Text>
+              <Text style={styles.title}>Where You Stand. Where You Plant Your Flag.</Text>
               <Text style={styles.subtitle}>
-                We do not cross from chaos into sovereignty with positive thinking. We measure the
-                exact territory lost to reclaim it.
+                We measure the territory surrendered to reclaim it.
               </Text>
             </View>
 
@@ -610,12 +600,10 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
         {currentStep === 3 && (
           <View>
             <View style={styles.header}>
-              <Text style={styles.eyebrow}>RIVER STONES IN A ZEN GARDEN</Text>
-              <Text style={styles.title}>Your 24/7 Dincharya.</Text>
-              <Text style={styles.titleEm}>Editable Sovereign Architecture.</Text>
+              <Text style={styles.eyebrow}>24-HOUR ARC</Text>
+              <Text style={styles.title}>Your 24-Hour Arc</Text>
               <Text style={styles.subtitle}>
-                Generated to bridge your exact delta. Every river stone is editable to fit your life.
-                Adjust the timeline now—then we follow it religiously.
+                Three immovable iron anchors. Three living stones. Tap to sculpt.
               </Text>
             </View>
 
@@ -682,23 +670,19 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
         {currentStep === 4 && (
           <View>
             <View style={styles.header}>
-              <Text style={styles.eyebrow}>HARDWARE AS SPIRIT</Text>
-              <Text style={styles.title}>The Three Seals of Armor.</Text>
-              <Text style={styles.titleEm}>Zero Clipping. Pure Silence.</Text>
+              <Text style={styles.eyebrow}>ARMOR</Text>
+              <Text style={styles.title}>The Three Seals</Text>
               <Text style={styles.subtitle}>
-                Shanivar treats your glass and haptic actuators as a sacred instrument. Arm the native
-                capabilities to hold the line.
+                Mechanical armor. Strike and arm.
               </Text>
             </View>
 
-            {/* Interactive Resonant Decay Test Card (Jira DEV-98) */}
+            {/* Interactive Resonant Decay Test Card */}
             <View style={styles.decayCard}>
               <View style={styles.decayHeader}>
-                <Text style={styles.decayBadge}>JIRA DEV-98 • SENSORY PRECISION</Text>
-                <Text style={styles.decayTitle}>Resonant Decay to Pure Silence</Text>
+                <Text style={styles.decayTitle}>01 • The Bowl of Silence</Text>
                 <Text style={styles.decayDesc}>
-                  Experience the multi-tier micro-frequency haptic curve mimicking a 200-pound bronze
-                  Tibetan bowl decaying into zero silence.
+                  Harmonic acoustic decay to absolute zero.
                 </Text>
               </View>
 
@@ -712,9 +696,9 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
               >
                 <Text style={styles.decayTestBtnText}>
                   {decayPhase === 'idle'
-                    ? '🔔 TEST RESONANT DECAY TO SILENCE'
+                    ? '🔔 STRIKE THE BELL (216 HZ)'
                     : decayPhase === 'striking'
-                    ? '⚡ INITIAL STRIKE (HEAVY)...'
+                    ? '⚡ STRIKE (216 HZ)...'
                     : decayPhase === 'decaying'
                     ? '〰️ HARMONIC ATTENUATION...'
                     : '✓ PURE SILENCE REACHED'}
@@ -738,17 +722,16 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
               </View>
             </View>
 
-            {/* Seal 1: The Shield of Focus */}
+            {/* Seal 2: The Shield of Focus */}
             <View style={styles.permCard}>
               <View style={styles.permHeader}>
                 <View style={styles.permIconBox}>
                   <Text style={styles.permIcon}>🛡️</Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.permTitle}>Seal 01 • The Shield of Focus</Text>
+                  <Text style={styles.permTitle}>02 • The Shield of Focus</Text>
                   <Text style={styles.permSub}>
-                    To silence the siren call of the machine, Shanivar must have authority to close the
-                    gates during focus blocks and digital blackout.
+                    Authority to silence phone gates
                   </Text>
                 </View>
               </View>
@@ -768,22 +751,21 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
                     notifPermissionGranted && styles.permBtnTextGranted,
                   ]}
                 >
-                  {notifPermissionGranted ? '✓ SHIELD ARMED & AUTHORIZED' : 'GRANT THE SHIELD'}
+                  {notifPermissionGranted ? '✓ ARMED' : 'ARM'}
                 </Text>
               </TouchableOpacity>
             </View>
 
-            {/* Seal 2: The Grounding Sensor */}
+            {/* Seal 3: 20 Paces on Earth */}
             <View style={styles.permCard}>
               <View style={styles.permHeader}>
                 <View style={styles.permIconBox}>
                   <Text style={styles.permIcon}>🚶</Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.permTitle}>Seal 02 • The Grounding Sensor</Text>
+                  <Text style={styles.permTitle}>03 • 20 Paces on Earth</Text>
                   <Text style={styles.permSub}>
-                    Consciousness does not return through positive thinking; it returns through 20 physical
-                    paces on the earth to silence your dawn ignition.
+                    Ambulatory motion gate
                   </Text>
                 </View>
               </View>
@@ -803,27 +785,26 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
                     motionPermissionGranted && styles.permBtnTextGranted,
                   ]}
                 >
-                  {motionPermissionGranted ? '✓ MOTION SENSOR CALIBRATED' : 'ARM THE MOTION SENSOR'}
+                  {motionPermissionGranted ? '✓ ARMED' : 'ARM'}
                 </Text>
               </TouchableOpacity>
             </View>
 
-            {/* Seal 3: The Horn of Dawn */}
+            {/* Seal 4: The Horn of Dawn */}
             <View style={styles.permCard}>
               <View style={styles.permHeader}>
                 <View style={styles.permIconBox}>
                   <Text style={styles.permIcon}>🔔</Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.permTitle}>Seal 03 • The Horn of Dawn</Text>
+                  <Text style={styles.permTitle}>04 • The Horn of Dawn</Text>
                   <Text style={styles.permSub}>
-                    A gentle chime leaves you in morning fog. Shanivar carries the high-priority monastic
-                    horn that shatters the morning trance.
+                    Monastic high-priority audio
                   </Text>
                 </View>
               </View>
               <View style={styles.permStatusPill}>
-                <Text style={styles.permStatusText}>✓ SACRED AUDIO READY</Text>
+                <Text style={styles.permStatusText}>✓ ARMED</Text>
               </View>
             </View>
           </View>
@@ -870,7 +851,7 @@ export const OnboardingScreen: React.FC<Props> = ({ onComplete, initialStep = 1 
                 disabled={isLoading}
               >
                 <Text style={styles.lockInBtnText}>
-                  {isLoading ? 'INSCRIBING COVENANT...' : 'INSCRIBE SOVEREIGN RYTHM →'}
+                  {isLoading ? 'INSCRIBING COVENANT...' : 'INSCRIBE SOVEREIGN RHYTHM →'}
                 </Text>
               </TouchableOpacity>
             )}
